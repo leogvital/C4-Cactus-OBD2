@@ -2,6 +2,9 @@
 
 Formato [SemVer](https://semver.org/lang/pt-BR/): `MAIOR.MENOR.CORREÇÃO`. Cada publicação recebe uma versão aqui, uma etiqueta `vX.Y.Z` no git e o número é exibido no painel. Para publicar: `python tools/release.py <patch|minor|major> "resumo"`.
 
+## [1.1.1] - 2026-10-17
+- Remove do código a consulta à tabela externa de falhas e o seletor de tipo de módulo; falhas de módulos mostram só o dado lido (bruto, código SAE e status)
+
 ## [1.1.0] - 2026-10-17
 ### Novo
 - **Log permanente de conexões** (`logs/conexoes.log`): data, hora e fuso de cada conexão, falha, desconexão, queda, início/fim do app, apagar falhas, reset da ECU, diagnóstico de capacidades e consultas a módulos. Não grava VIN.

@@ -180,10 +180,6 @@ def make_handler(state):
                     self._json({"version": __version__, "changelog": text})
                 elif self.path == "/api/connection-log":
                     self._json({"file": audit.LOG_FILE, "events": audit.tail()})
-                elif self.path.startswith("/api/dtc-search"):
-                    from urllib.parse import urlparse, parse_qs
-                    q = parse_qs(urlparse(self.path).query).get("q", [""])[0]
-                    self._json(pids.peugeot_search(q))
                 elif self.path == "/api/scan/status":
                     sc = state.scan
                     self._json({"running": sc["running"], "step": sc["step"], "done": sc["done"],
@@ -208,7 +204,7 @@ def make_handler(state):
                     st = pids.decode_status(elm.read_pid("01"))
                     out = {"status": st}
                     for key, mode in (("confirmed", "03"), ("pending", "07"), ("permanent", "0A")):
-                        out[key] = [{"code": c, "desc": pids.describe_dtc(c), "peugeot": pids.peugeot_lookup(c)}
+                        out[key] = [{"code": c, "desc": pids.describe_dtc(c)}
                                     for c in elm.read_dtcs(mode)]
                     self._json(out)
                 elif self.path == "/api/info":
@@ -248,8 +244,8 @@ def make_handler(state):
                     self._json(modules.query(elm, b.get("req_id"), b.get("resp_id"), b.get("cmd")))
                 elif self.path == "/api/module-dtcs":
                     elm = self._need()
-                    audit.record("FALHAS_MODULO", f"{b.get('req_id')}->{b.get('resp_id')}", b.get("hint"))
-                    self._json(modules.read_dtcs(elm, b.get("req_id"), b.get("resp_id"), b.get("hint")))
+                    audit.record("FALHAS_MODULO", f"{b.get('req_id')}->{b.get('resp_id')}")
+                    self._json(modules.read_dtcs(elm, b.get("req_id"), b.get("resp_id")))
                 elif self.path == "/api/log/clear":
                     elm327.log_clear()
                     self._json({"ok": True})

@@ -98,11 +98,7 @@ def query(elm, req_id, resp_id, cmd):
 
 
 # ---------- leitura e interpretação de falhas (UDS 19 02 / KWP 17, 18) ----------
-import pids
 from elm327 import decode_dtc
-
-# famílias da tabela Peugeot que correspondem a cada tipo de módulo (usadas para priorizar)
-HINT_FAMILIES = {"airbag": ["MDS12"], "abs": ["MDT22"], "cluster": ["MDI04", "MDI056"]}
 
 # bits do byte de status UDS (ISO 14229)
 UDS_STATUS = [
@@ -114,34 +110,15 @@ UDS_STATUS = [
 DTC_ATTEMPTS = ["1902FF", "190209", "17FF00", "1800FF00"]
 
 
-def _matches(keys, hint):
-    hint_f = HINT_FAMILIES.get(hint or "", [])
-    out, seen = [], set()
-    for key, how in keys:
-        for v in pids.peugeot_lookup(key, limit=60):
-            sig = (key, v["desc"])
-            if sig in seen:
-                continue
-            seen.add(sig)
-            out.append({"key": key, "how": how, "desc": v["desc"], "families": v["families"],
-                        "hinted": any(f["code"] in hint_f for f in v["families"])})
-    out.sort(key=lambda x: not x["hinted"])
-    return out[:6]
-
-
-def _record(b, hint, uds):
+def _record(b, uds):
     """b = bytes do registro: UDS = 3 de DTC + 1 de status; KWP = 2 de DTC + 1 de status."""
     d = b[:-1]
     status = b[-1]
     hi_lo = d[:2]
     raw4 = hi_lo.hex().upper()
     sae = decode_dtc(int.from_bytes(hi_lo, "big"))
-    keys = [(raw4, "código bruto"), (sae, "formato SAE")]
-    if len(d) == 3 and d[2]:
-        keys.append((d.hex().upper(), "código bruto de 3 bytes"))
     rec = {"raw": b.hex().upper(), "code_raw": raw4, "code_sae": sae,
-           "ftb": f"{d[2]:02X}" if len(d) == 3 else None, "status": f"{status:02X}",
-           "matches": _matches(keys, hint)}
+           "ftb": f"{d[2]:02X}" if len(d) == 3 else None, "status": f"{status:02X}"}
     if uds:
         rec["status_text"] = [t for bit, t in UDS_STATUS if status & bit]
     return rec
@@ -161,7 +138,7 @@ def parse_dtc_response(payload):
     return None, []
 
 
-def read_dtcs(elm, req_id, resp_id, hint=None):
+def read_dtcs(elm, req_id, resp_id):
     """Tenta ler as falhas do módulo por UDS e KWP; interpreta a 1ª resposta positiva."""
     attempts, fmt, recs, used = [], None, [], None
     for cmd in DTC_ATTEMPTS:
@@ -177,12 +154,12 @@ def read_dtcs(elm, req_id, resp_id, hint=None):
         if pos:
             fmt, raw_recs = parse_dtc_response(bytes.fromhex(pos[0]["hex"]))
             used = cmd
-            recs = [_record(b, hint, fmt == "uds") for b in raw_recs]
+            recs = [_record(b, fmt == "uds") for b in raw_recs]
             if fmt:
                 break
     note = ("Interpretação PROVISÓRIA: o formato foi lido pelo padrão UDS/KWP e o significado do código "
-            "bruto na tabela Peugeot ainda não foi confirmado neste carro. Confira sempre o dado bruto.")
+            "bruto ainda não foi confirmado neste carro. Confira sempre o dado bruto.")
     if not fmt:
         note = "Nenhum dos formatos teve resposta positiva (veja as tentativas)."
-    return {"req_id": req_id.upper(), "resp_id": (resp_id or "").upper(), "hint": hint, "format": fmt,
+    return {"req_id": req_id.upper(), "resp_id": (resp_id or "").upper(), "format": fmt,
             "command": used, "attempts": attempts, "records": recs, "note": note}
