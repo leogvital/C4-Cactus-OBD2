@@ -3,9 +3,6 @@
 Formato [SemVer](https://semver.org/lang/pt-BR/): `MAIOR.MENOR.CORREÇÃO`. Cada publicação recebe uma versão aqui, uma etiqueta `vX.Y.Z` no git e o número é exibido no painel. Para publicar: `python tools/release.py <patch|minor|major> "resumo"`.
 
 ## [1.2.0] - 2026-10-18
-- Painel de instrumentos animado (conta-giros, velocímetro, temperatura, combustível, luzes de aviso), modo demonstração e mini-gráficos na aba Ao vivo
-
-## [1.2.0] - 2026-10-18
 ### Novo
 - **Aba Painel**: instrumentos animados (conta-giros, velocímetro, temperatura da água, combustível), luzes de aviso (injeção, falhas, carga, água, combustível), cartões de tensão/carga/borboleta/pedal/etc., modo demonstração e teste dos instrumentos. A aba abre por padrão.
 - Mini-gráficos de histórico nos cartões da aba **Ao vivo**.
