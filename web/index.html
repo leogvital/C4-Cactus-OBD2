@@ -85,6 +85,14 @@
     <div class="row"><button id="btnDtc">Ler falhas</button><button id="btnClear" class="danger">Apagar falhas</button></div>
     <div id="dtcOut" class="mut">Clique em “Ler falhas”.</div>
 
+    <div class="box" id="dqBox">
+      <h3>Consultar tabela Peugeot/Citroën</h3>
+      <p class="mut" style="margin:0 0 10px">Digite um código (ex.: <code>P0420</code>, <code>P04</code>) ou uma palavra em inglês (ex.: <code>misfire</code>, <code>lambda</code>).
+      Descrições em inglês, de uma tabela de famílias de módulos Peugeot/Citroën: o mesmo código pode ter textos diferentes por família, e ela não é específica do seu Cactus.</p>
+      <div class="row"><input id="dq" placeholder="código ou palavra"><button id="btnDq" class="sec">Consultar</button></div>
+      <div id="dqOut"></div>
+    </div>
+
     <div class="box">
       <h3>Reset da ECU (central do motor)</h3>
       <p class="mut" style="margin:0 0 10px">Envia o serviço UDS 0x11 (ECU Reset) para a central do motor. Só com <b>motor desligado e ignição ligada</b>.
@@ -151,6 +159,12 @@
       <button class="sec" data-c="1001">Sessão padrão (10 01)</button>
     </div>
     <div class="row">
+      <select id="mHint" aria-label="Tipo de módulo (prioriza a tabela)">
+        <option value="">Módulo: automático</option>
+        <option value="airbag">Airbag</option>
+        <option value="abs">ABS / ESP</option>
+        <option value="cluster">Painel de instrumentos</option>
+      </select>
       <button id="btnMDtc">Ler falhas do módulo</button>
       <button id="btnMDtcAll" class="sec" title="Lê as falhas de ABS, airbag e painel (candidatos)">Ler ABS, airbag e painel</button>
     </div>
@@ -219,6 +233,7 @@ async function tick() {
     const s = await api('status');
     connected = s.connected;
     if (s.app_version) $('#ver').textContent = 'v' + s.app_version;
+    $('#dqBox').style.display = s.dtc_table ? '' : 'none';
     $('#dot').classList.toggle('on', connected);
     $('#btnConn').textContent = connected ? 'Desconectar' : 'Conectar';
     if (s.error && !connected) showErr(s.error);
@@ -242,7 +257,7 @@ $('#btnDtc').onclick = async () => {
       h += `<div class="banner ${st.mil ? '' : 'ok'}">Luz de injeção (MIL): <b>${st.mil ? 'ACESA' : 'apagada'}</b> · ${st.dtc_count} código(s) confirmado(s)</div>`;
     }
     const table = (title, list) => `<h3>${title}</h3>` + (list.length
-      ? `<table>${list.map(c => `<tr><td class="code">${c.code}</td><td>${c.desc || '<span class="mut">sem descrição local</span>'}</td></tr>`).join('')}</table>`
+      ? `<table>${list.map(c => `<tr><td class="code">${c.code}</td><td>${c.desc || '<span class="mut">sem descrição na tabela local</span>'}${pgHtml(c.peugeot)}</td></tr>`).join('')}</table>`
       : '<p class="mut">Nenhum.</p>');
     h += table('Confirmados', d.confirmed) + table('Pendentes', d.pending) + table('Permanentes', d.permanent);
     if (st && st.monitors.length) {
@@ -270,6 +285,24 @@ $('#btnInfo').onclick = async () => {
       <tr><td>PIDs suportados</td><td class="code">${i.supported.join(' ')}</td></tr></table>`;
   } catch (e) { $('#infoOut').textContent = ''; showErr(e.message); }
 };
+
+// ---------- Tabela Peugeot ----------
+const famTxt = fs => fs.map(f => esc(f.title)).join(' · ');
+function pgHtml(list) {
+  if (!list || !list.length) return '';
+  return '<div class="mut" style="font-size:12.5px;margin-top:3px">Tabela Peugeot (EN): ' + list.map(v =>
+    `${esc(v.desc)} <span style="opacity:.75">[${famTxt(v.families)}]</span>`).join('<br>') + '</div>';
+}
+async function dtcSearch() {
+  const q = $('#dq').value.trim(); if (!q) return;
+  try {
+    const r = await api('dtc-search?q=' + encodeURIComponent(q));
+    $('#dqOut').innerHTML = r.total ? `<p class="mut">${r.total} resultado(s)${r.total > r.results.length ? ' — mostrando ' + r.results.length : ''}</p><table class="sm">${r.results.map(x =>
+      `<tr><td class="code">${esc(x.code)}</td><td>${esc(x.desc)}</td><td class="mut">${famTxt(x.families)}</td></tr>`).join('')}</table>` : '<p class="mut">Nada encontrado.</p>';
+  } catch (e) { showErr(e.message); }
+}
+$('#btnDq').onclick = dtcSearch;
+$('#dq').onkeydown = e => { if (e.key === 'Enter') dtcSearch(); };
 
 // ---------- Log ----------
 let logs = [], lastId = 0;
@@ -408,7 +441,7 @@ const CANDIDATES = [
   ['Central multimídia/telemática', '764', '664'],
 ];
 CANDIDATES.forEach(([n, q, r], i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${n} — ${q} → ${r}`; $('#mPick').appendChild(o); });
-$('#mPick').onchange = () => { const c = CANDIDATES[$('#mPick').value]; if (c) { $('#mReq').value = c[1]; $('#mResp').value = c[2]; } };
+$('#mPick').onchange = () => { const c = CANDIDATES[$('#mPick').value]; if (c) { $('#mReq').value = c[1]; $('#mResp').value = c[2]; $('#mHint').value = c[3] || ''; } };
 async function modSend(cmd) {
   const body = {req_id: $('#mReq').value, resp_id: $('#mResp').value, cmd};
   const out = $('#mOut'); out.textContent += `> [${body.req_id.toUpperCase()}→${(body.resp_id || '—').toUpperCase()}] ${cmd}\n`;
@@ -436,7 +469,7 @@ $('#btnProbeAll').onclick = async () => {
 };
 document.querySelectorAll('#mPresets button').forEach(b => b.onclick = () => { $('#mCmd').value = b.dataset.c; modSend(b.dataset.c); });
 
-// ---- falhas de módulos (UDS 19 02 / KWP 17) ----
+// ---- falhas de módulos (UDS 19 02 / KWP 17) com a tabela Peugeot ----
 function renderModDtc(r, title) {
   let h = `<div class="box"><h3>${esc(title || 'Módulo')} <span class="mut" style="font-size:13px;font-weight:400">${r.req_id} → ${r.resp_id}</span></h3>`;
   h += `<div class="banner" style="background:#f5a52422;border-color:var(--warn)">${esc(r.note)}</div>`;
@@ -444,26 +477,28 @@ function renderModDtc(r, title) {
   if (r.format) {
     h += `<p class="mut" style="margin:6px 0">Formato lido: <b>${r.format === 'uds' ? 'UDS (19 02)' : 'KWP'}</b> via <span class="code">${r.command}</span> · ${r.records.length} falha(s)</p>`;
     if (!r.records.length) h += '<p class="ok">O módulo respondeu e não informou falhas.</p>';
-    else h += `<table class="sm"><tr><th>Bruto</th><th>Código</th><th>Status</th></tr>` + r.records.map(x => {
+    else h += `<table class="sm"><tr><th>Bruto</th><th>Código</th><th>Status</th><th>Descrição (tabela Peugeot, EN)</th></tr>` + r.records.map(x => {
       const st = x.status_text ? esc(x.status_text.join(', ') || '—') + ` <span class="mut code">${x.status}</span>` : `<span class="code">${x.status}</span> <span class="mut">(significado depende do módulo)</span>`;
-      return `<tr><td class="code">${x.raw}</td><td class="code">${x.code_raw}<br><span class="mut">${x.code_sae}</span></td><td>${st}</td></tr>`;
-    }).join('') + '</table>';
+      const ms = x.matches.length ? x.matches.map(m => `${m.hinted ? '★ ' : ''}${esc(m.desc)} <span class="mut" style="font-size:12px">[${esc(m.families.map(f => f.title).join(' · '))}; ${esc(m.how)} ${esc(m.key)}]</span>`).join('<br>')
+        : '<span class="mut">sem correspondência na tabela</span>';
+      return `<tr><td class="code">${x.raw}</td><td class="code">${x.code_raw}<br><span class="mut">${x.code_sae}</span></td><td>${st}</td><td>${ms}</td></tr>`;
+    }).join('') + '</table><p class="mut" style="margin:6px 0 0">★ = família do tipo de módulo escolhido.</p>';
   }
   return h + '</div>';
 }
-async function modDtc(req, resp, title) {
+async function modDtc(req, resp, hint, title) {
   const out = $('#mOut'); out.textContent += `> falhas do módulo [${req.toUpperCase()}→${(resp || '').toUpperCase()}]\n`;
   try {
-    const r = await api('module-dtcs', {req_id: req, resp_id: resp});
+    const r = await api('module-dtcs', {req_id: req, resp_id: resp, hint});
     $('#mDtc').insertAdjacentHTML('beforeend', renderModDtc(r, title));
     out.textContent += `  ${r.format ? r.records.length + ' falha(s) via ' + r.command : 'sem leitura de falhas'}\n`;
   } catch (e) { out.textContent += `  ! ${e.message}\n`; showErr(e.message); }
   out.scrollTop = 1e9;
 }
-$('#btnMDtc').onclick = () => { $('#mDtc').innerHTML = ''; modDtc($('#mReq').value, $('#mResp').value, 'Módulo'); };
+$('#btnMDtc').onclick = () => { $('#mDtc').innerHTML = ''; modDtc($('#mReq').value, $('#mResp').value, $('#mHint').value, 'Módulo'); };
 $('#btnMDtcAll').onclick = async () => {
   $('#mDtc').innerHTML = '';
-  for (const [n, q, r] of CANDIDATES.filter(c => c[3])) await modDtc(q, r, n);
+  for (const [n, q, r, hint] of CANDIDATES.filter(c => c[3])) await modDtc(q, r, hint, n);
 };
 
 const send = async () => {

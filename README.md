@@ -321,7 +321,7 @@ Exemplo para testar tudo: `python simulator.py --engine-off --two-ecus`
 | POST | `/api/log/clear` | | Limpa o log |
 | POST | `/api/scan/start` | | Inicia o diagnóstico de capacidades |
 | POST | `/api/uds` | `{req_id, resp_id, cmd}` | Consulta somente leitura a um módulo |
-| POST | `/api/module-dtcs` | `{req_id, resp_id}` | Lê e interpreta as falhas de um módulo |
+| POST | `/api/module-dtcs` | `{req_id, resp_id, hint}` | Lê e interpreta as falhas de um módulo (`hint`: `abs`, `airbag`, `cluster`) |
 
 Exemplo (com o app conectado):
 
