@@ -131,6 +131,13 @@ O painel escuta apenas em `127.0.0.1` (não fica exposto na rede).
 ## 5. Abas do painel
 
 ### Painel
+Dois layouts, com seletor **Digital / Clássico** no topo (a escolha fica salva no navegador):
+
+- **Digital** (padrão): estilo painel moderno, com velocímetro e conta-giros em arco com marcador, números grandes, barra de temperatura do motor (C–H) sob o velocímetro, segmentos de combustível (E–F) sob o conta-giros, luzes de aviso no topo, relógio, temperatura do ar de admissão, **gráfico ao vivo** de rotação e velocidade (últimos ~30 s) e uma faixa inferior com **trajeto, velocidade média, velocidade máxima e tempo**, calculados pelo app a partir da velocidade lida (botão Zerar).
+- **Clássico**: mostradores redondos com ponteiro e luzes de aviso, descrito a seguir.
+
+Não aparecem itens que a central do motor não informa (marcha, navegação, assistente de faixa, autonomia, odômetro), para o painel mostrar só dado real.
+
 Painel de instrumentos animado, como o de um carro: **conta-giros**, **velocímetro**, **temperatura do motor** e **combustível**, com ponteiros que se movem suavemente e um arco que acende conforme o valor. Zona vermelha no conta-giros (acima de 6.000 rpm), temperatura fria/quente colorida e luzes de aviso:
 
 | Luz | Acende quando |
@@ -146,7 +153,7 @@ Painel de instrumentos animado, como o de um carro: **conta-giros**, **velocíme
 Abaixo dos mostradores há cartões com tensão, carga, borboleta, pedal, ar de admissão, pressão do coletor, avanço e etanol.
 
 - **O Cactus não informa o nível de combustível pela porta OBD**, então o mostrador de combustível fica em `N/D` neste carro (aparece normalmente em carros que informam o PID 2F).
-- **Modo demonstração:** simula valores para ver o painel funcionando sem o carro (aparece a etiqueta DEMONSTRAÇÃO). Também abre direto em http://localhost:8080/#demo.
+- **Modo demonstração:** simula valores para ver o painel funcionando sem o carro (aparece a etiqueta DEMONSTRAÇÃO). Também abre direto em http://localhost:8080/#demo (e `/#classic-demo` para o layout clássico).
 - **Animação de teste:** ponteiros vão ao fim da escala e voltam e as luzes acendem, como ao ligar um carro. É **só uma animação na tela**: não envia nenhum comando ao carro e não testa o painel de instrumentos do veículo. Roda sozinha ao abrir a página.
 - Valores com mais de 30 s sem atualização somem (`--`). Os ponteiros usam animação CSS e respeitam a opção "reduzir movimento" do sistema.
 

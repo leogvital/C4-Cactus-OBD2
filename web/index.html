@@ -110,6 +110,48 @@
   nav{overflow-x:auto;scrollbar-width:thin}nav button{flex:none;white-space:nowrap}
   @media (max-width:820px){.dash{padding:10px}.cluster{grid-template-columns:minmax(0,1fr)}.cluster .g{max-width:380px;margin:auto}.cluster .center{flex-direction:row;justify-content:center;gap:4px}.cluster .center .g{flex:1 1 0;min-width:0;max-width:190px}.tiles{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.light{width:54px}}
   @media (prefers-reduced-motion:reduce){.g-needle,.g-val,.tile .bar i{transition:none}.light.bad{animation:none}}
+
+  /* ---------- Layout digital ---------- */
+  .layout-sw{display:flex;gap:2px;background:#111923;border:1px solid #243040;border-radius:10px;padding:2px}
+  .layout-sw button{background:transparent;border:0;color:#8b97a6;padding:5px 12px;border-radius:8px}
+  .layout-sw button.act{background:#223044;color:#fff}
+  #dashDigital{display:none}
+  .dash.digital #dashDigital{display:block}.dash.digital #dashClassic{display:none}
+  .digi-bezel{border-radius:56px 56px 70px 70px/44px 44px 80px 80px;background:linear-gradient(#101a26,#080d13);border:2px solid #263548;box-shadow:inset 0 0 70px #000a,0 0 0 7px #0e151e,0 0 0 8px #1c2836;padding:14px 26px 12px}
+  .digi-top{display:flex;justify-content:space-between;align-items:center;color:#8b97a6;font-size:13px;min-height:34px}
+  .digi-top .lights{gap:2px 6px;justify-content:center}
+  .digi .light{width:44px}.digi .light svg{width:20px;height:20px}.digi .light span{display:none}
+  .digi-main{display:grid;grid-template-columns:1fr .72fr 1fr;gap:6px;align-items:center}
+  .digi-center{display:flex;flex-direction:column;gap:8px;padding:0 4px}
+  .dgchart{width:100%;height:auto;background:#0b121a;border:1px solid #1d2937;border-radius:14px}
+  .dgchart .ax{stroke:#1f2b39;stroke-width:1}
+  .dgchart .l-rpm{fill:none;stroke:#4aa3ff;stroke-width:2;stroke-linejoin:round}
+  .dgchart .l-spd{fill:none;stroke:#e8edf3;stroke-width:2;stroke-linejoin:round}
+  .dgchart text{font:600 9px system-ui;fill:#7c8998}
+  .digi-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .digi-stats>div{background:#0d151e;border:1px solid #1b2634;border-radius:10px;padding:6px 10px}
+  .digi-stats .n{font-size:10.5px;color:#7c8998}.digi-stats .v{font:600 18px ui-monospace,Consolas,monospace}
+  .digi-stats .u{font-size:11px;color:#7c8998;margin-left:3px}
+  .digi-bottom{display:flex;flex-wrap:wrap;justify-content:space-around;gap:6px 14px;border-top:1px solid #1d2937;margin-top:8px;padding-top:9px;font-size:13px;color:#8b97a6}
+  .digi-bottom b{color:#e8edf3;font:600 15px ui-monospace,Consolas,monospace;margin-left:6px}
+  .digi-bottom button{background:transparent;border:1px solid #2a3848;color:#8b97a6;padding:1px 9px;font-size:11px;border-radius:99px}
+  .dg-face{fill:url(#gface);stroke:#2a3848;stroke-width:2}
+  .dg-track{fill:none;stroke:#2a3848;stroke-width:3}
+  .dg-zone{fill:none;stroke:#ef5350;stroke-width:6}
+  .dg-val{fill:none;stroke:url(#dgGrad);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .45s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 6px #4aa3ff77)}
+  .dg-val.red{stroke:#ef5350;filter:drop-shadow(0 0 6px #ef5350aa)}
+  .dg-mark{transform-box:view-box;transform-origin:150px 150px;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+  .dg-mark path{fill:#fff;filter:drop-shadow(0 0 4px #fff9)}
+  .dg-tick{stroke:#53606f;stroke-width:1.2}.dg-tick.maj{stroke:#cfd8e3;stroke-width:2.2}.dg-tick.red{stroke:#ef5350}
+  .dg-lab{fill:#cfd8e3;font:500 15px system-ui,sans-serif;text-anchor:middle;dominant-baseline:middle}.dg-lab.red{fill:#ef5350}
+  .dg-num{fill:#fff;font:300 82px system-ui,sans-serif;text-anchor:middle;font-variant-numeric:tabular-nums}
+  .dg-unit{fill:#9aa6b4;font:400 15px system-ui,sans-serif;text-anchor:middle}
+  .dg-title{fill:#7c8998;font:600 11px system-ui,sans-serif;text-anchor:middle;letter-spacing:.2em}
+  .dg-chip{fill:#142031}.dg-chiptx{fill:#cfd8e3;font:600 11px system-ui,sans-serif;text-anchor:middle;letter-spacing:.06em}
+  .ft-track{fill:#243142}.ft-mark{fill:#4aa3ff;transition:x .4s ease,fill .3s}.ft-lab{fill:#8b97a6;font:600 10px system-ui}
+  .ft-ic{fill:#9aa6b4}.ft-seg{fill:#243142;transition:fill .3s}.ft-seg.on{fill:#cfd8e3}
+  @media (max-width:820px){.digi-bezel{padding:12px 12px 10px;border-radius:36px}.digi-main{grid-template-columns:minmax(0,1fr)}.digi-main .g{max-width:380px;margin:auto}.digi-center{order:3}}
+  @media (prefers-reduced-motion:reduce){.dg-val,.dg-mark,.ft-mark{transition:none}}
 </style>
 </head>
 <body>
@@ -135,17 +177,20 @@
 
   <section id="painel" class="tab act">
     <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <linearGradient id="dgGrad" gradientUnits="userSpaceOnUse" x1="40" y1="250" x2="150" y2="10"><stop offset="0" stop-color="#2a7de1"/><stop offset="1" stop-color="#8be9ff"/></linearGradient>
       <radialGradient id="gface" cx="50%" cy="42%" r="65%"><stop offset="0" stop-color="#1c2631"/><stop offset="1" stop-color="#0b1017"/></radialGradient>
     </defs></svg>
     <div class="dash" id="dash">
       <div class="dash-top">
-        <div class="lights" id="lights"></div>
+        <div class="layout-sw" id="layoutSw" role="group" aria-label="Layout do painel"><button data-l="digital">Digital</button><button data-l="classic">Clássico</button></div>
         <div class="dash-actions">
           <span id="demoBadge">DEMONSTRAÇÃO</span>
           <button id="btnDemo" class="sec" title="Simula valores para ver o painel funcionando, sem o carro">Modo demonstração</button>
           <button id="btnSweep" class="sec" title="Só animação na tela: não envia nada ao carro e não testa o painel do veículo">Animação de teste</button>
         </div>
       </div>
+      <div id="dashClassic">
+      <div class="lights" id="lights"></div>
       <div class="cluster">
         <div class="g" id="gTach"></div>
         <div class="center">
@@ -155,6 +200,25 @@
         <div class="g" id="gSpeed"></div>
       </div>
       <div class="tiles" id="tiles"></div>
+      </div>
+      <div id="dashDigital" class="digi">
+        <div class="digi-bezel">
+          <div class="digi-top"><span id="dgClock">--:--</span><div class="lights" id="dgLights"></div><span id="dgAmb" title="Temperatura do ar de admissão">--</span></div>
+          <div class="digi-main">
+            <div class="g" id="dgSpeed"></div>
+            <div class="digi-center">
+              <svg id="dgChart" class="dgchart" viewBox="0 0 300 130" role="img" aria-label="Gráfico ao vivo de rotação e velocidade"></svg>
+              <div class="digi-stats" id="dgStats"></div>
+            </div>
+            <div class="g" id="dgTach"></div>
+          </div>
+          <div class="digi-bottom">
+            <span>Trajeto<b id="dgTrip">0,0 km</b></span><span>Vel. média<b id="dgAvg">0 km/h</b></span>
+            <span>Vel. máx.<b id="dgMax">0 km/h</b></span><span>Tempo<b id="dgTime">00:00</b></span>
+            <button id="btnTripReset" title="Zera trajeto, médias e gráfico">Zerar</button>
+          </div>
+        </div>
+      </div>
       <div class="dash-note" id="dashNote">Conecte ao adaptador para ver os dados reais ou use o modo demonstração.</div>
     </div>
   </section>
@@ -666,11 +730,11 @@ const LIGHTS = [
   ['link', 'link', 'Adaptador'], ['run', 'run', 'Motor ligado'], ['mil', 'mil', 'Injeção'],
   ['pend', 'warn', 'Falhas'], ['batt', 'batt', 'Carga'], ['temp', 'temp', 'Temp. motor'], ['fuel', 'fuel', 'Combust.'],
 ];
-$('#lights').innerHTML = LIGHTS.map(([id, ic, tx]) =>
-  `<div class="light" id="lt-${id}" title="${tx}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[ic]}</svg><span>${tx}</span></div>`).join('');
+const lightsHtml = () => LIGHTS.map(([id, ic, tx]) =>
+  `<div class="light" data-light="${id}" title="${tx}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[ic]}</svg><span>${tx}</span></div>`).join('');
+$('#lights').innerHTML = lightsHtml(); $('#dgLights').innerHTML = lightsHtml();
 const setLight = (id, st, tip) => {
-  const e = $('#lt-' + id); e.className = 'light' + (st ? ' on ' + st : '');
-  if (tip) e.title = tip;
+  document.querySelectorAll(`[data-light="${id}"]`).forEach(e => { e.className = 'light' + (st ? ' on ' + st : ''); if (tip) e.title = tip; });
 };
 
 // cartões inferiores: [pid, nome, unidade, casas decimais, mín, máx]
@@ -703,6 +767,7 @@ function applyDash(m, st, conn) {
     t.querySelector('.v').textContent = v == null ? '--' : (+v).toFixed(dec);
     t.querySelector('.bar i').style.width = v == null ? '0%' : Math.round(Math.min(Math.max((v - lo) / (hi - lo), 0), 1) * 100) + '%';
   }
+  digiUpdate(m, st, conn);
   $('#dashNote').textContent = demoOn ? 'Valores simulados, não vêm do carro.' :
     !conn ? 'Desconectado: conecte ao adaptador para ver os dados reais ou use o modo demonstração.' :
     (fuel == null ? 'O Cactus não informa o nível de combustível pela porta OBD (o ponteiro fica em N/D). ' : '') + 'Dados reais da central do motor.';
@@ -730,25 +795,140 @@ async function dashTick() {
 }
 const startDash = () => { if (!dashOn) { dashOn = true; dashTick(); } };
 
+
+// ---------- Layout digital (estilo painel moderno) ----------
+// o: {min,max,major,sub,label,title,unit,lab,fmtNum,zone:[de,ate],foot:'temp'|'fuel'}
+function makeArcGauge(host, o) {
+  const start = -135, end = 135, R = 124;
+  const frac = v => (Math.min(Math.max(v, o.min), o.max) - o.min) / (o.max - o.min);
+  const ang = v => start + frac(v) * (end - start);
+  let s = `<svg viewBox="0 0 300 300" role="img" aria-label="${o.label}">`;
+  s += `<circle cx="150" cy="150" r="146" class="dg-face"/>`;
+  s += `<path d="${arcPath(R, start, end)}" class="dg-track"/>`;
+  if (o.zone) s += `<path d="${arcPath(R, ang(o.zone[0]), ang(o.zone[1]))}" class="dg-zone"/>`;
+  s += `<path d="${arcPath(R, start, end)}" class="dg-val" pathLength="100" stroke-dasharray="100 1000" stroke-dashoffset="100"/>`;
+  const step = o.major / o.sub;
+  for (let v = o.min; v <= o.max + 1e-6; v += step) {
+    const major = Math.abs((v - o.min) / o.major - Math.round((v - o.min) / o.major)) < 1e-6;
+    const red = o.zone && v >= o.zone[0];
+    const [x0, y0] = pol(R - 10, ang(v)), [x1, y1] = pol(R - (major ? 24 : 16), ang(v));
+    s += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" class="dg-tick ${major ? 'maj' : ''} ${red ? 'red' : ''}"/>`;
+    if (major) { const [lx, ly] = pol(R - 40, ang(v)); s += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" class="dg-lab ${red ? 'red' : ''}">${o.lab(v)}</text>`; }
+  }
+  s += `<text x="150" y="102" class="dg-title">${o.title}</text>`;
+  s += `<text x="150" y="176" class="dg-num" data-num>--</text><text x="150" y="203" class="dg-unit">${o.unit}</text>`;
+  s += `<rect x="102" y="216" width="96" height="22" rx="11" class="dg-chip"/><text x="150" y="231" class="dg-chiptx" data-chip>--</text>`;
+  if (o.foot === 'temp') {
+    s += `<g><path class="ft-ic" d="M96 253a2 2 0 0 1 4 0v8.2a3.6 3.6 0 1 1-4 0z"/><text x="106" y="264" class="ft-lab">C</text><rect x="116" y="257" width="68" height="4" rx="2" class="ft-track"/><rect x="116" y="253" width="4" height="12" rx="2" class="ft-mark" data-mark/><text x="190" y="264" class="ft-lab">H</text></g>`;
+  } else {
+    s += `<g><path class="ft-ic" d="M92 252h8v12h-8z M101 255h2l2 2v6h-1.4v-5.4L102 256h-1z"/><text x="109" y="264" class="ft-lab">E</text>` +
+      [0, 1, 2, 3, 4, 5].map(i => `<rect x="${118 + i * 11}" y="256" width="8" height="8" rx="1.5" class="ft-seg" data-seg/>`).join('') +
+      `<text x="187" y="264" class="ft-lab">F</text><text x="150" y="280" class="ft-lab" style="text-anchor:middle" data-nd></text></g>`;
+  }
+  s += `<g class="dg-mark" style="transform:rotate(${start}deg)"><path d="M150 12l-7 13h14z"/></g></svg>`;
+  host.innerHTML = s;
+  const val = host.querySelector('.dg-val'), mark = host.querySelector('.dg-mark'), num = host.querySelector('[data-num]'),
+        chip = host.querySelector('[data-chip]'), fm = host.querySelector('[data-mark]'), segs = host.querySelectorAll('[data-seg]'), nd = host.querySelector('[data-nd]');
+  return {
+    set(v, txt) {
+      if (v == null) { mark.style.transform = `rotate(${start}deg)`; val.style.strokeDashoffset = 100; num.textContent = '--'; return; }
+      mark.style.transform = `rotate(${ang(v)}deg)`;
+      val.style.strokeDashoffset = 100 - frac(v) * 100;
+      val.setAttribute('class', 'dg-val' + (o.zone && v >= o.zone[0] ? ' red' : ''));
+      num.textContent = txt != null ? txt : Math.round(v);
+    },
+    chip(t) { chip.textContent = t; },
+    temp(v) {  // barra C-H sob o velocímetro
+      if (!fm) return;
+      const f = v == null ? 0 : Math.min(Math.max((v - 40) / 90, 0), 1);
+      fm.setAttribute('x', 116 + f * 64);
+      fm.style.fill = v == null ? '#3a4756' : v > 112 ? '#ef5350' : v > 105 ? '#f5a524' : v < 60 ? '#4aa3ff' : '#3ecf8e';
+    },
+    fuel(v) {  // segmentos E-F sob o conta-giros
+      segs.forEach((e, i) => e.setAttribute('class', 'ft-seg' + (v != null && v >= (i + 0.5) / 6 * 100 ? ' on' : '')));
+      if (nd) nd.textContent = v == null ? 'N/D' : '';
+    },
+  };
+}
+const dgSpeed = makeArcGauge($('#dgSpeed'), {min: 0, max: 240, major: 20, sub: 4, label: 'Velocímetro', title: 'VELOCIDADE', unit: 'km/h', lab: v => v, foot: 'temp'});
+const dgTach = makeArcGauge($('#dgTach'), {min: 0, max: 8000, major: 1000, sub: 4, label: 'Conta-giros', title: 'MOTOR', unit: '×1000 rpm', lab: v => v / 1000, zone: [6000, 8000], foot: 'fuel'});
+
+$('#dgStats').innerHTML = [['04', 'Carga do motor', '%'], ['11', 'Borboleta', '%'], ['42', 'Tensão da ECU', 'V'], ['0B', 'Pressão do coletor', 'kPa']]
+  .map(([p, n, u]) => `<div><div class="n">${n}</div><span class="v" id="ds-${p}">--</span><span class="u">${u}</span></div>`).join('');
+
+// gráfico ao vivo: rotação (azul) e velocidade (branco), ~30 s
+const chartBuf = {rpm: [], spd: []}, CH_N = 120;
+function drawChart() {
+  const line = (a, max) => a.map((v, i) => `${(i / (CH_N - 1) * 300).toFixed(1)},${(118 - Math.min(v / max, 1) * 104).toFixed(1)}`).join(' ');
+  let g = '';
+  for (let i = 0; i < 4; i++) g += `<line x1="0" x2="300" y1="${14 + i * 34.7}" y2="${14 + i * 34.7}" class="ax"/>`;
+  g += `<text x="6" y="11">RPM ×1000 (azul) · km/h (branco) · últimos ~30 s</text>`;
+  if (chartBuf.rpm.length > 1) g += `<polyline class="l-rpm" points="${line(chartBuf.rpm, 8000)}"/><polyline class="l-spd" points="${line(chartBuf.spd, 240)}"/>`;
+  $('#dgChart').innerHTML = g;
+}
+
+// trajeto: integra a velocidade lida (km/h) ao longo do tempo
+const trip = {km: 0, secs: 0, max: 0, last: 0};
+const fmtTime = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+function tripReset() { trip.km = trip.secs = trip.max = 0; trip.last = 0; chartBuf.rpm.length = chartBuf.spd.length = 0; }
+$('#btnTripReset').onclick = tripReset;
+
+function digiUpdate(m, st, conn) {
+  const rpm = m['0C'], spd = m['0D'], tmp = m['05'], fuel = m['2F'];
+  rpm != null ? dgTach.set(rpm, (rpm / 1000).toFixed(1)) : dgTach.set(null);
+  spd != null ? dgSpeed.set(spd, Math.round(spd)) : dgSpeed.set(null);
+  dgSpeed.temp(tmp); dgTach.fuel(fuel);
+  dgSpeed.chip(m['04'] != null ? `CARGA ${Math.round(m['04'])} %` : 'CARGA --');
+  dgTach.chip(m['52'] != null ? `ETANOL ${Math.round(m['52'])} %` : 'ETANOL --');
+  for (const p of ['04', '11', '42', '0B']) $('#ds-' + p).textContent = m[p] == null ? '--' : (+m[p]).toFixed(p === '42' ? 1 : 0);
+  $('#dgAmb').textContent = m['0F'] != null ? `Ar adm. ${Math.round(m['0F'])} °C` : '--';
+  const now = performance.now();
+  if (conn && spd != null && trip.last) {
+    const dt = Math.min((now - trip.last) / 1000, 1);
+    trip.km += spd * dt / 3600; trip.secs += dt; trip.max = Math.max(trip.max, spd);
+  }
+  trip.last = now;
+  $('#dgTrip').textContent = trip.km.toFixed(1).replace('.', ',') + ' km';
+  $('#dgAvg').textContent = Math.round(trip.secs ? trip.km / trip.secs * 3600 : 0) + ' km/h';
+  $('#dgMax').textContent = Math.round(trip.max) + ' km/h';
+  $('#dgTime').textContent = fmtTime(trip.secs);
+  if (conn && rpm != null) { chartBuf.rpm.push(rpm); chartBuf.spd.push(spd || 0); if (chartBuf.rpm.length > CH_N) { chartBuf.rpm.shift(); chartBuf.spd.shift(); } }
+  drawChart();
+}
+
+// relógio e seletor de layout (lembrado no navegador)
+const tickClock = () => { $('#dgClock').textContent = new Date().toTimeString().slice(0, 5); };
+tickClock(); setInterval(tickClock, 5000);
+function setLayout(l) {
+  $('#dash').classList.toggle('digital', l === 'digital');
+  document.querySelectorAll('#layoutSw button').forEach(b => b.classList.toggle('act', b.dataset.l === l));
+  try { localStorage.setItem('dashLayout', l); } catch (e) {}
+}
+document.querySelectorAll('#layoutSw button').forEach(b => b.onclick = () => setLayout(b.dataset.l));
+let saved = 'digital'; try { saved = localStorage.getItem('dashLayout') || 'digital'; } catch (e) {}
+if (location.hash.includes('classic')) saved = 'classic';
+setLayout(saved === 'classic' ? 'classic' : 'digital');
+
 // teste dos instrumentos: ponteiros vão ao fim da escala e voltam, luzes acendem
 function sweepTest() {
   if (sweeping) return;
   sweeping = true;
   gTach.set(8000, '8'); gSpeed.set(240, '240'); gTemp.set(130, '130'); gFuel.set(100, '100');
+  dgTach.set(8000, '8.0'); dgSpeed.set(240, '240'); dgSpeed.temp(130); dgTach.fuel(100);
   LIGHTS.forEach(([id], i) => setLight(id, ['ok', 'info', 'warn', 'bad'][i % 4]));
   setTimeout(() => { gTach.set(0, '0'); gSpeed.set(0, '0'); gTemp.set(40, '40'); gFuel.set(0, '0'); }, 1000);
   setTimeout(() => { sweeping = false; }, 1900);
 }
 $('#btnSweep').onclick = sweepTest;
 $('#btnDemo').onclick = () => {
-  demoOn = !demoOn;
+  demoOn = !demoOn; tripReset();
   $('#btnDemo').classList.toggle('on', demoOn);
   $('#btnDemo').textContent = demoOn ? 'Sair da demonstração' : 'Modo demonstração';
   $('#demoBadge').style.display = demoOn ? 'inline-block' : 'none';
 };
 document.querySelector('nav button[data-t=painel]').addEventListener('click', startDash);
 sweepTest(); startDash();
-if (location.hash === '#demo') $('#btnDemo').click();
+if (location.hash.includes('demo')) $('#btnDemo').click();
 
 const send = async () => {
   const c = $('#cmd').value.trim(); if (!c) return;
