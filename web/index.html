@@ -152,6 +152,20 @@
   .ft-ic{fill:#9aa6b4}.ft-seg{fill:#243142;transition:fill .3s}.ft-seg.on{fill:#cfd8e3}
   @media (max-width:820px){.digi-bezel{padding:12px 12px 10px;border-radius:36px}.digi-main{grid-template-columns:minmax(0,1fr)}.digi-main .g{max-width:380px;margin:auto}.digi-center{order:3}}
   @media (prefers-reduced-motion:reduce){.dg-val,.dg-mark,.ft-mark{transition:none}}
+
+  /* ---------- Tela cheia ---------- */
+  .dash.fs{position:fixed;inset:0;z-index:100;width:100%;height:100%;max-width:none;border:0;border-radius:0;margin:0;padding:12px 18px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;box-shadow:none}
+  .dash.fs .dash-top,.dash.fs .dash-note{transition:opacity .5s}
+  .dash.fs.idle .dash-top,.dash.fs.idle .dash-note{opacity:0;pointer-events:none}
+  .dash.fs.idle{cursor:none}
+  .dash.fs .g{display:flex;justify-content:center}
+  .dash.fs .g svg{width:auto;height:min(60vh,34vw)}
+  .dash.fs .cluster .center .g svg{height:min(28vh,19vw)}
+  .dash.fs .tiles{display:none}
+  .dash.fs .digi-bezel{padding:16px 34px 14px}
+  .dash.fs .digi-main .g svg{height:min(62vh,33vw)}
+  .dash.fs .digi-center{max-width:30vw;margin:auto}
+  @media (max-width:820px){.dash.fs .g svg,.dash.fs .digi-main .g svg{height:auto;width:100%;max-height:44vh}.dash.fs{overflow:auto;justify-content:flex-start}}
 </style>
 </head>
 <body>
@@ -186,6 +200,7 @@
         <div class="dash-actions">
           <span id="demoBadge">DEMONSTRAÇÃO</span>
           <button id="btnDemo" class="sec" title="Simula valores para ver o painel funcionando, sem o carro">Modo demonstração</button>
+          <button id="btnFs" class="sec" title="Tela cheia (tecla F). Esc para sair">Tela cheia</button>
           <button id="btnSweep" class="sec" title="Só animação na tela: não envia nada ao carro e não testa o painel do veículo">Animação de teste</button>
         </div>
       </div>
@@ -908,6 +923,41 @@ document.querySelectorAll('#layoutSw button').forEach(b => b.onclick = () => set
 let saved = 'digital'; try { saved = localStorage.getItem('dashLayout') || 'digital'; } catch (e) {}
 if (location.hash.includes('classic')) saved = 'classic';
 setLayout(saved === 'classic' ? 'classic' : 'digital');
+
+
+// ---------- Tela cheia ----------
+const dashEl = $('#dash');
+const fsElem = () => document.fullscreenElement || document.webkitFullscreenElement;
+async function toggleFs() {
+  try {
+    if (fsElem()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else await (dashEl.requestFullscreen || dashEl.webkitRequestFullscreen).call(dashEl);
+  } catch (e) { showErr('Tela cheia indisponível neste navegador: ' + e.message); }
+}
+let wakeLock = null, idleTimer = null;
+async function keepAwake(on) {   // evita a tela apagar enquanto o painel está em tela cheia
+  try {
+    if (on && navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen');
+    else if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) {}
+}
+function pokeFs() {   // em tela cheia, esconde os botões depois de 3 s sem mexer o mouse
+  dashEl.classList.remove('idle'); clearTimeout(idleTimer);
+  if (dashEl.classList.contains('fs')) idleTimer = setTimeout(() => dashEl.classList.add('idle'), 3000);
+}
+function onFsChange() {
+  const on = !!fsElem();
+  dashEl.classList.toggle('fs', on);
+  $('#btnFs').textContent = on ? 'Sair da tela cheia' : 'Tela cheia';
+  keepAwake(on); pokeFs();
+}
+['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, onFsChange));
+$('#btnFs').onclick = toggleFs;
+dashEl.addEventListener('mousemove', pokeFs); dashEl.addEventListener('click', pokeFs);
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey && $('#painel').classList.contains('act') &&
+      !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) toggleFs();
+});
 
 // teste dos instrumentos: ponteiros vão ao fim da escala e voltam, luzes acendem
 function sweepTest() {

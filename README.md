@@ -136,6 +136,8 @@ Dois layouts, com seletor **Digital / Clássico** no topo (a escolha fica salva 
 - **Digital** (padrão): estilo painel moderno, com velocímetro e conta-giros em arco com marcador, números grandes, barra de temperatura do motor (C–H) sob o velocímetro, segmentos de combustível (E–F) sob o conta-giros, luzes de aviso no topo, relógio, temperatura do ar de admissão, **gráfico ao vivo** de rotação e velocidade (últimos ~30 s) e uma faixa inferior com **trajeto, velocidade média, velocidade máxima e tempo**, calculados pelo app a partir da velocidade lida (botão Zerar).
 - **Clássico**: mostradores redondos com ponteiro e luzes de aviso, descrito a seguir.
 
+**Tela cheia:** botão no topo do painel ou tecla **F** (Esc sai). Os instrumentos crescem para ocupar a tela inteira, os botões somem sozinhos após 3 s sem mexer o mouse (e voltam ao mexê-lo) e, onde o navegador permite, a tela não apaga enquanto o painel está em tela cheia. Funciona nos dois layouts.
+
 Não aparecem itens que a central do motor não informa (marcha, navegação, assistente de faixa, autonomia, odômetro), para o painel mostrar só dado real.
 
 Painel de instrumentos animado, como o de um carro: **conta-giros**, **velocímetro**, **temperatura do motor** e **combustível**, com ponteiros que se movem suavemente e um arco que acende conforme o valor. Zona vermelha no conta-giros (acima de 6.000 rpm), temperatura fria/quente colorida e luzes de aviso:

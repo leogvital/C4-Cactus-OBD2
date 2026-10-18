@@ -2,6 +2,9 @@
 
 Formato [SemVer](https://semver.org/lang/pt-BR/): `MAIOR.MENOR.CORREÇÃO`. Cada publicação recebe uma versão aqui, uma etiqueta `vX.Y.Z` no git e o número é exibido no painel. Para publicar: `python tools/release.py <patch|minor|major> "resumo"`.
 
+## [1.4.0] - 2026-10-18
+- Painel em tela cheia (botão ou tecla F), com ocultação automática dos botões e tela sempre ligada
+
 ## [1.3.0] - 2026-10-18
 - Painel com dois layouts (Digital estilo painel moderno e Clássico) com seletor; digital traz gráfico ao vivo, trajeto, velocidade média/máxima e tempo
 

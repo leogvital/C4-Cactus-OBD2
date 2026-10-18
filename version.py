@@ -1,2 +1,2 @@
 """Versão do app (SemVer). Atualizada por tools/release.py a cada publicação; veja CHANGELOG.md."""
-__version__ = "1.3.0"
+__version__ = "1.4.0"
