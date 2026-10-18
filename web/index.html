@@ -644,7 +644,7 @@ const gTach = makeGauge($('#gTach'), {min: 0, max: 8000, major: 1000, minor: 500
   lab: v => v / 1000, zones: [{from: 6000, to: 8000, cls: 'red'}], valCls: v => v >= 6000 ? 'red' : v >= 5000 ? 'warn' : ''});
 const gSpeed = makeGauge($('#gSpeed'), {min: 0, max: 240, major: 20, minor: 10, label: 'Velocímetro', title: 'VELOCIDADE', unit: 'km/h',
   lab: v => v % 40 === 0 ? v : ''});
-const gTemp = makeGauge($('#gTemp'), {min: 40, max: 130, major: 30, minor: 10, start: -105, end: 105, small: true, label: 'Temperatura da água', title: 'ÁGUA', unit: '°C',
+const gTemp = makeGauge($('#gTemp'), {min: 40, max: 130, major: 30, minor: 10, start: -105, end: 105, small: true, label: 'Temperatura do motor', title: 'TEMP. MOTOR', unit: '°C',
   lab: v => v === 40 ? 'C' : v === 130 ? 'H' : v === 100 ? '100' : v === 70 ? '70' : '',
   zones: [{from: 40, to: 60, cls: 'blue'}, {from: 110, to: 130, cls: 'red'}],
   valCls: v => v < 60 ? 'blue' : v > 110 ? 'red' : v > 105 ? 'warn' : 'good'});
@@ -664,7 +664,7 @@ const ICONS = {
 };
 const LIGHTS = [
   ['link', 'link', 'Adaptador'], ['run', 'run', 'Motor ligado'], ['mil', 'mil', 'Injeção'],
-  ['pend', 'warn', 'Falhas'], ['batt', 'batt', 'Carga'], ['temp', 'temp', 'Água'], ['fuel', 'fuel', 'Combust.'],
+  ['pend', 'warn', 'Falhas'], ['batt', 'batt', 'Carga'], ['temp', 'temp', 'Temp. motor'], ['fuel', 'fuel', 'Combust.'],
 ];
 $('#lights').innerHTML = LIGHTS.map(([id, ic, tx]) =>
   `<div class="light" id="lt-${id}" title="${tx}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[ic]}</svg><span>${tx}</span></div>`).join('');
@@ -696,7 +696,7 @@ function applyDash(m, st, conn) {
   setLight('pend', st && st.dtc_count > 0 ? 'warn' : '', st ? st.dtc_count + ' falha(s) confirmada(s)' : '');
   const ch = volt != null && rpm > 400 ? (volt < 12 || volt > 15.2 ? 'bad' : volt < 13 ? 'warn' : '') : '';
   setLight('batt', ch, volt != null ? 'Tensão ' + volt.toFixed(1) + ' V' : 'Carga da bateria');
-  setLight('temp', tmp == null ? '' : tmp > 112 ? 'bad' : tmp > 105 ? 'warn' : tmp < 50 ? 'info' : '', tmp != null && tmp < 50 ? 'Motor frio' : 'Temperatura da água');
+  setLight('temp', tmp == null ? '' : tmp > 112 ? 'bad' : tmp > 105 ? 'warn' : tmp < 50 ? 'info' : '', tmp != null && tmp < 50 ? 'Motor frio' : 'Temperatura do motor');
   setLight('fuel', fuel != null && fuel < 15 ? 'warn' : '', fuel == null ? 'Nível de combustível não informado pelo carro via OBD' : 'Combustível');
   for (const [p, , , dec, lo, hi] of TILES) {
     const t = $('#tl-' + p), v = m[p];

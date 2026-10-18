@@ -2,6 +2,9 @@
 
 Formato [SemVer](https://semver.org/lang/pt-BR/): `MAIOR.MENOR.CORREÇÃO`. Cada publicação recebe uma versão aqui, uma etiqueta `vX.Y.Z` no git e o número é exibido no painel. Para publicar: `python tools/release.py <patch|minor|major> "resumo"`.
 
+## [1.2.2] - 2026-10-18
+- Painel: 'água' passa a se chamar 'temperatura do motor' (mostrador, luz de aviso e documentação)
+
 ## [1.2.1] - 2026-10-18
 - Renomeia o botão 'Teste dos instrumentos' para 'Animação de teste' e deixa claro que é só visual e não testa o painel do carro
 

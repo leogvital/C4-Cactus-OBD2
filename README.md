@@ -131,7 +131,7 @@ O painel escuta apenas em `127.0.0.1` (não fica exposto na rede).
 ## 5. Abas do painel
 
 ### Painel
-Painel de instrumentos animado, como o de um carro: **conta-giros**, **velocímetro**, **temperatura da água** e **combustível**, com ponteiros que se movem suavemente e um arco que acende conforme o valor. Zona vermelha no conta-giros (acima de 6.000 rpm), temperatura fria/quente colorida e luzes de aviso:
+Painel de instrumentos animado, como o de um carro: **conta-giros**, **velocímetro**, **temperatura do motor** e **combustível**, com ponteiros que se movem suavemente e um arco que acende conforme o valor. Zona vermelha no conta-giros (acima de 6.000 rpm), temperatura fria/quente colorida e luzes de aviso:
 
 | Luz | Acende quando |
 |---|---|
@@ -140,7 +140,7 @@ Painel de instrumentos animado, como o de um carro: **conta-giros**, **velocíme
 | Injeção | a luz de injeção (MIL) do carro está acesa (status lido a cada poucos segundos) |
 | Falhas | há códigos de falha confirmados |
 | Carga | tensão da ECU abaixo de 13 V (alerta) ou 12 V (crítico) com o motor ligado, ou acima de 15,2 V |
-| Água | acima de 105 °C (alerta) / 112 °C (crítico), ou azul abaixo de 50 °C (motor frio) |
+| Temp. motor | acima de 105 °C (alerta) / 112 °C (crítico), ou azul abaixo de 50 °C (motor frio) |
 | Combustível | abaixo de 15 % (só se o carro informar) |
 
 Abaixo dos mostradores há cartões com tensão, carga, borboleta, pedal, ar de admissão, pressão do coletor, avanço e etanol.
