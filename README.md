@@ -356,6 +356,22 @@ curl -X POST http://localhost:8080/api/uds -d '{"req_id":"7E0","resp_id":"7E8","
 - Leitura passiva do barramento CAN (`ATMA`) não está implementada.
 - Não há login no painel: ele só aceita conexões de `127.0.0.1`.
 
+### Limitações do adaptador ELM327
+
+O app usa um adaptador ELM327 Wi-Fi. Esse tipo de adaptador tem limites próprios que **não dependem do programa**:
+
+| Limitação | Efeito no app |
+|---|---|
+| **Uma rede CAN por vez, nos pinos 6/14** (CAN de alta velocidade) | Só enxerga o que está nesse barramento: no Cactus, a central do motor (`7E8`) e uma segunda que quase não responde (`7E9`). ABS, airbag, painel e BSI ficam em outro barramento e, em geral, **não aparecem**. |
+| **Sem troca de pinos nem de velocidade** | Não alcança o CAN de carroceria (que em carros PSA costuma ser mais lento e usar outros pinos). Esse dado **não foi confirmado** para o Cactus. |
+| **O BSI pode bloquear o acesso** | Relatos de comunidade indicam que o BSI funciona como filtro entre a porta OBD e os outros módulos. Isso explicaria as consultas UDS sem resposta no teste real, mas é uma hipótese. |
+| **Protocolo OBD-II genérico** | Lê dados padrão do motor, falhas (03/07/0A) e identificação. Funções de oficina (coding, atuadores, leitura estendida de módulos) exigem ferramenta específica da marca. |
+| **Velocidade baixa** | Cada leitura é uma pergunta e uma resposta por vez, com tempo limite do adaptador. Dá algumas dezenas de leituras por segundo, e a leitura ao vivo faz rodízio dos PIDs lentos. |
+| **Clones variam em qualidade** | Os mais baratos truncam respostas longas (como o VIN), perdem leituras (`NO DATA`) e têm firmware pela metade. |
+| **Adaptadores "especiais" não garantem cobertura** | Modelos com chave HS/MS CAN foram feitos para outras marcas (por exemplo Ford). Eles não resolvem os módulos PSA só por terem a chave. |
+
+**O que fazer para ler os outros módulos:** o caminho realista é uma interface/ferramenta com suporte a PSA (por exemplo Lexia/DiagBox ou scanner multimarca com módulo PSA) ou uma interface CAN própria ligada ao barramento certo. Esse tipo de acesso **não é possível com um ELM327 comum** e não está implementado neste projeto. Antes de comprar qualquer adaptador, rode a aba **Módulos** no seu carro: se nenhum candidato responder, o ELM327 não alcança esses módulos.
+
 ## 14. Como ajudar a validar no seu carro
 
 Para evoluir as funções de módulos, o que mais ajuda são respostas reais. Com o carro parado, motor desligado e ignição ligada:

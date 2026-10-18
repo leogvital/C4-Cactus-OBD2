@@ -132,7 +132,7 @@
   <section id="mod" class="tab">
     <div class="banner" style="background:#f5a52422;border-color:var(--warn)">
       <b>Avançado · somente leitura.</b> Envia consultas a qualquer módulo CAN pelo ID que você informar. Serviços de escrita, reset, apagar falhas,
-      segurança, atuadores e rotinas são <b>bloqueados</b>. O app não traz endereços de módulos PSA embutidos: use os IDs do seu software de diagnóstico.
+      segurança, atuadores e rotinas são <b>bloqueados</b>. O app não traz endereços de módulos PSA embutidos: use os IDs do seu software de diagnóstico. <b>Limite do ELM327:</b> ele só lê um barramento CAN (pinos 6/14), então ABS, airbag, painel e BSI normalmente <b>não respondem</b> aqui; sem resposta não significa defeito (veja o README, “Limitações do adaptador ELM327”).
     </div>
     <div class="row">
       <input id="mReq" placeholder="ID requisição (ex.: 7E0)" style="max-width:190px;flex:none">
