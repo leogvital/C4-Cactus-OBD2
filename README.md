@@ -5,14 +5,14 @@ Aplicação em **Python puro** (somente biblioteca padrão, sem `pip install`) c
 O que ela faz:
 
 - mostra dados **ao vivo** do motor (RPM, velocidade, temperaturas, lambdas, ajustes de combustível etc.);
-- lê e apaga **falhas (DTC)** da central do motor e mostra a descrição dos códigos mais comuns em português;
+- lê e apaga **falhas (DTC)** da central do motor e consulta as descrições na **tabela de falhas Peugeot/Citroën** (2.632 códigos, 54 famílias de módulos);
 - mostra VIN, protocolo e PIDs suportados;
 - faz **reset da central do motor** (UDS `11`), com travas de segurança;
 - faz um **diagnóstico de capacidades** das centrais (somente leitura), para planejar novas funções;
 - consulta **outros módulos** (ABS, airbag, painel, BSI...) com serviços UDS/KWP **somente leitura**, interpretando as falhas lidas;
 - registra **todos os comandos e respostas** em um log que pode ser baixado;
-- grava **em arquivo, para sempre**, cada conexão com a central com data e hora (`logs/conexoes.log`, veja a [seção 17](#17-log-permanente-de-conexões));
-- mostra a **versão** do app e o histórico de versões ([CHANGELOG.md](CHANGELOG.md), [seção 18](#18-versionamento-e-publicação)).
+- grava **em arquivo, para sempre**, cada conexão com a central com data e hora (`logs/conexoes.log`, veja a [seção 18](#18-log-permanente-de-conexões));
+- mostra a **versão** do app e o histórico de versões ([CHANGELOG.md](CHANGELOG.md), [seção 19](#19-versionamento-e-publicação)).
 
 Funciona em Windows, Linux e macOS (Python 3.8 ou superior).
 
@@ -33,14 +33,15 @@ Funciona em Windows, Linux e macOS (Python 3.8 ou superior).
 9. [Solução de problemas](#9-solução-de-problemas)
 10. [Como o app funciona por dentro](#10-como-o-app-funciona-por-dentro)
 11. [API HTTP local](#11-api-http-local)
-12. [Limites conhecidos](#12-limites-conhecidos)
-13. [Como ajudar a validar no seu carro](#13-como-ajudar-a-validar-no-seu-carro)
-14. [Desenvolvimento e publicação no GitHub](#14-desenvolvimento-e-publicação-no-github)
-15. [Dados de terceiros e créditos](#15-dados-de-terceiros-e-créditos)
-16. [Glossário](#16-glossário)
-17. [Log permanente de conexões](#17-log-permanente-de-conexões)
-18. [Versionamento e publicação](#18-versionamento-e-publicação)
-19. [Licença](#19-licença)
+12. [Tabela de falhas Peugeot](#12-tabela-de-falhas-peugeot)
+13. [Limites conhecidos](#13-limites-conhecidos)
+14. [Como ajudar a validar no seu carro](#14-como-ajudar-a-validar-no-seu-carro)
+15. [Desenvolvimento e publicação no GitHub](#15-desenvolvimento-e-publicação-no-github)
+16. [Dados de terceiros e créditos](#16-dados-de-terceiros-e-créditos)
+17. [Glossário](#17-glossário)
+18. [Log permanente de conexões](#18-log-permanente-de-conexões)
+19. [Versionamento e publicação](#19-versionamento-e-publicação)
+20. [Licença](#20-licença)
 
 ---
 
@@ -52,7 +53,7 @@ Funciona em Windows, Linux e macOS (Python 3.8 ou superior).
 | Dados ao vivo (modo 01), falhas OBD (03/07/0A), Info (VIN, protocolo) | Validado no carro |
 | Log de comandos e respostas | Validado no carro |
 | Aba Capacidades (varredura somente leitura) | Validado no carro em 17/10/2026 |
-| Reset da ECU, aba Módulos, falhas de módulos (UDS/KWP) | Testado **só no simulador** |
+| Reset da ECU, aba Módulos, falhas de módulos (UDS/KWP), consulta à tabela Peugeot | Testado **só no simulador** |
 | Log permanente de conexões, versionamento | Testado no simulador (v1.1.0) |
 
 Resultado do teste real (Cactus 2022 1.6): protocolo ISO 15765-4 CAN 11 bit/500 kbps; luz de injeção apagada e nenhuma falha armazenada; a central do motor responde (`7E8`) aos PIDs 01, 03, 04, 05, 06, 07, 0B, 0C, 0D, 0E, 0F, 11, 13, 14, 15, 1C, 21, 2E, 30, 33, 42, 47, 49, 4A, 4D, 51 e 52; **não** informa vazão de ar (MAF), nível de combustível nem temperatura do óleo pela porta OBD; uma segunda central (`7E9`) responde pouca coisa.
@@ -74,13 +75,14 @@ O que está "só no simulador" pode se comportar diferente no carro real. Confir
 psa_obd/
 ├── app.py               servidor local + API do painel
 ├── elm327.py            cliente TCP do ELM327, PIDs, falhas, VIN, log, reset da ECU
-├── pids.py              fórmulas dos PIDs, monitores, descrições de falhas em português
+├── pids.py              fórmulas dos PIDs, monitores, descrições de falhas, consulta à tabela Peugeot
 ├── capabilities.py      diagnóstico de capacidades (varredura somente leitura)
 ├── audit.py             log permanente de conexões (logs/conexoes.log)
 ├── version.py           número da versão (SemVer)
 ├── CHANGELOG.md         histórico de versões
 ├── modules.py           consultas UDS/KWP somente leitura e leitura de falhas de módulos
 ├── simulator.py         adaptador ELM327 falso para testar sem o carro
+├── dtc_peugeot.json     tabela de falhas Peugeot/Citroën (opcional, arquivo local; não vem no repositório)
 ├── LICENSE              licença (uso não comercial)
 ├── tools/
 │   └── release.py       publica uma versão (version.py + changelog + commit + etiqueta)
@@ -92,7 +94,7 @@ psa_obd/
 |---|---|
 | `app.py` | Sobe o servidor HTTP em `127.0.0.1`, gerencia a conexão, a leitura ao vivo em segundo plano e o diagnóstico de capacidades |
 | `elm327.py` | Comandos AT, protocolo, tentativas e *timeouts*, junção de respostas de várias centrais e de quadros multi-frame (ISO-TP), VIN, leitura/limpeza de falhas, reset da ECU e o buffer de log (últimas 5.000 linhas) |
-| `pids.py` | Decodificação dos PIDs do modo 01, status de prontidão (MIL e monitores), descrição de falhas em português (~90 códigos genéricos) |
+| `pids.py` | Decodificação dos PIDs do modo 01, status de prontidão (MIL e monitores), descrição de falhas em português (~90 códigos genéricos) e consulta à tabela Peugeot |
 | `capabilities.py` | Remontagem de respostas ISO-TP com cabeçalhos e varredura de cada central (modos 01/02/06/09, falhas, leituras UDS) |
 | `modules.py` | Lista de serviços liberados e bloqueados, envio de consultas a um par de IDs CAN e interpretação de falhas UDS (`19 02`) e KWP (`17`/`18`) |
 | `simulator.py` | Simula um ELM327 com duas centrais, módulos fictícios e opções de falha |
@@ -136,7 +138,8 @@ PIDs decodificados (modo 01): 03 estado do sistema de combustível · 04 carga d
 ### Falhas (DTC)
 - **Ler falhas:** confirmadas (modo 03), pendentes (07) e permanentes (0A), união de todas as centrais que responderem; luz de injeção (MIL) e monitores de prontidão (catalisador, EVAP, sonda lambda etc.).
 - **Apagar falhas** (com confirmação): modo 04. Zera também os monitores de prontidão e **não resolve a causa** do defeito. Anote os códigos antes.
-- **Descrições:** cada falha mostra a descrição em português (para ~90 códigos genéricos); os demais aparecem só com o código.
+- **Descrições:** cada falha mostra a descrição em português (para ~90 códigos genéricos) e as descrições da **tabela Peugeot/Citroën** (em inglês, por família de módulo, com motores a gasolina primeiro).
+- **Consultar tabela Peugeot:** caixa de busca por código (`P0420`), prefixo (`P03`) ou palavra em inglês (`misfiring`).
 - **Reset da ECU:** veja [Reset da ECU](#reset-da-ecu).
 
 ### Info
@@ -208,19 +211,20 @@ Pré-requisitos: motor **desligado**, ignição ligada, app conectado.
    | 3 | `17 FF 00` | KWP ReadStatusOfDTC, todos os grupos |
    | 4 | `18 00 FF 00` | KWP ReadDTCByStatus |
 
-3. A tela mostra: o banner de **interpretação provisória**, as tentativas e o resultado de cada uma, o formato lido (UDS ou KWP) e a lista de falhas.
+3. A tela mostra: o banner de **interpretação provisória**, as tentativas e o resultado de cada uma, o formato lido (UDS ou KWP) e a tabela de falhas.
 
-**Colunas da lista**
+**Colunas da tabela**
 
 | Coluna | Significado |
 |---|---|
 | Bruto | Bytes do registro como o módulo enviou (UDS: 3 bytes de código + 1 de status; KWP: 2 de código + 1 de status) |
 | Código | Código bruto de 2 bytes (ex.: `8610`) e o mesmo valor no formato SAE (ex.: `B0610`) |
 | Status | UDS: bits decodificados (ISO 14229, veja abaixo). KWP: byte mostrado cru, pois o significado depende do módulo |
+| Descrição | Descrições da tabela Peugeot casando o código bruto, o formato SAE ou o código de 3 bytes. ★ marca a família do tipo de módulo escolhido (airbag: MDS12; ABS: MDT22; painel: MDI04/MDI056) |
 
 **Bits do status UDS:** `01` falha ativa agora · `02` falhou neste ciclo · `04` pendente · `08` confirmada · `10` teste não concluído desde a limpeza · `20` falhou desde a limpeza · `40` teste não concluído neste ciclo · `80` luz de aviso solicitada.
 
-**Por que é provisório:** o formato (UDS/KWP) segue o padrão, mas ainda não se sabe, num Cactus real, como o módulo codifica as falhas, nem se os endereços candidatos são esses. Confie no dado bruto. Para ajudar a confirmar, veja a [seção 13](#13-como-ajudar-a-validar-no-seu-carro).
+**Por que é provisório:** o formato (UDS/KWP) segue o padrão, mas ainda não se sabe, num Cactus real, se o código que o módulo envia corresponde ao código da tabela Peugeot, nem se os endereços candidatos são esses. Se nenhum código casar, a coluna mostra "sem correspondência na tabela"; confie no dado bruto. Para ajudar a confirmar, veja a [seção 14](#14-como-ajudar-a-validar-no-seu-carro).
 
 ## 7. O que o app não faz (segurança)
 
@@ -308,9 +312,10 @@ Exemplo para testar tudo: `python simulator.py --engine-off --two-ecus`
 | GET | `/api/connection-log` | | Últimos 200 eventos do log permanente de conexões |
 | GET | `/api/changelog` | | Versão atual e texto do CHANGELOG.md |
 | GET | `/api/live` | | Valores ao vivo atuais |
-| GET | `/api/dtcs` | | Falhas (03/07/0A), status MIL e descrições |
+| GET | `/api/dtcs` | | Falhas (03/07/0A), status MIL e descrições (inclui `peugeot`) |
 | GET | `/api/info` | | VIN, tensão, PIDs suportados, versão, protocolo |
 | GET | `/api/log?since=N` | `since` | Entradas do log a partir do índice N |
+| GET | `/api/dtc-search?q=` | `q` | Busca na tabela Peugeot |
 | GET | `/api/scan/status` | | Andamento do diagnóstico de capacidades |
 | GET | `/api/scan/result` | | Resultado (JSON) do último diagnóstico |
 | POST | `/api/connect` | `{host, port}` | Conecta ao adaptador |
@@ -330,19 +335,28 @@ curl http://localhost:8080/api/live
 curl -X POST http://localhost:8080/api/uds -d '{"req_id":"7E0","resp_id":"7E8","cmd":"22F190"}'
 ```
 
-## 12. Limites conhecidos
+## 12. Tabela de falhas Peugeot
+
+`dtc_peugeot.json` tem duas chaves: `families` (54 famílias de módulos, ex.: MDE12/14/42/44/46/48 para motores a gasolina, MDS12 airbag, MDT22 ESP/ABS Bosch 8.1, MDI04 painel) e `codes` (2.632 códigos com descrição em inglês e as famílias em que aparecem).
+
+- **Busca por código:** o código é procurado como informado. Nas falhas do motor, famílias de motor a gasolina vêm primeiro; nos módulos, a família do tipo escolhido (★) vem primeiro.
+- **Busca por texto:** em inglês, na caixa "Consultar tabela Peugeot".
+- **Arquivo opcional:** a tabela é um arquivo local (`dtc_peugeot.json`, na pasta do projeto) que **não é distribuído com o repositório**. Sem ele o app funciona normalmente, só sem essas descrições, e a caixa de busca da tabela fica escondida.
+- A tabela **não é específica do Cactus**: o mesmo código pode ter textos diferentes conforme a família do módulo. Use a descrição como pista, não como diagnóstico.
+
+## 13. Limites conhecidos
 
 - A base é **OBD-II padrão (SAE J1979)** sobre ISO 15765-4 CAN (11 bit, 500 kbps), negociado automaticamente (`ATSP0`). O ELM327 não alcança redes CAN de 125 kbps em outros pinos do conector.
 - O C4 Cactus tem **mais de uma central respondendo** ao OBD (motor e outra). Os dados ao vivo usam a primeira que responde; as falhas são a união de todas, sem indicar de qual central veio cada código.
 - Sem MAF, nível de combustível e temperatura do óleo pela porta OBD neste carro (confirmado no teste real).
 - Cerca de 3% das leituras podem voltar `NO DATA` ao acaso; o app tenta de novo e mantém o último valor.
 - Alguns clones ELM327 devolvem o VIN truncado ou falham em respostas longas; o app avisa quando a resposta vem parcial.
-- Descrição em português só para cerca de 90 códigos genéricos comuns.
-- Resultados de leitura de módulos além da central do motor são **provisórios** até serem confirmados em um carro real: endereços candidatos, formato UDS/KWP e interpretação das falhas.
+- Descrição em português só para cerca de 90 códigos genéricos comuns; a tabela Peugeot está em inglês.
+- Resultados de leitura de módulos além da central do motor são **provisórios** até serem confirmados em um carro real: endereços candidatos, formato UDS/KWP e correspondência com a tabela.
 - Leitura passiva do barramento CAN (`ATMA`) não está implementada.
 - Não há login no painel: ele só aceita conexões de `127.0.0.1`.
 
-## 13. Como ajudar a validar no seu carro
+## 14. Como ajudar a validar no seu carro
 
 Para evoluir as funções de módulos, o que mais ajuda são respostas reais. Com o carro parado, motor desligado e ignição ligada:
 
@@ -352,9 +366,9 @@ Para evoluir as funções de módulos, o que mais ajuda são respostas reais. Co
 4. Aba **Log** → **Baixar .txt**.
 5. Anote o que o painel do carro mostra no momento (luzes de ABS, airbag, mensagens no visor) para comparar com o que o app leu.
 
-Guarde os três arquivos (`.json`, log `.txt` e uma captura da tela de Módulos). Com eles dá para confirmar quais pares de endereços respondem, qual formato cada módulo usa e como cada um codifica as falhas.
+Guarde os três arquivos (`.json`, log `.txt` e uma captura da tela de Módulos). Com eles dá para confirmar quais pares de endereços respondem, qual formato cada módulo usa e se os códigos casam com a tabela.
 
-## 14. Desenvolvimento e publicação no GitHub
+## 15. Desenvolvimento e publicação no GitHub
 
 - Sem dependências externas: apenas biblioteca padrão do Python. Código comentado em português.
 - Testes manuais usando o simulador (seção 8); não há suíte automatizada ainda.
@@ -373,17 +387,19 @@ git push -u origin main
 
 Antes de publicar:
 
-- **Licença:** veja a [seção 19](#19-licença).
+- **Licença:** veja a [seção 20](#20-licença).
+- **Tabela de falhas:** o `dtc_peugeot.json` não é versionado nem publicado; veja a seção 16.
 - **Dados pessoais:** não suba logs ou JSONs de diagnóstico do seu carro sem revisar, pois contêm o **VIN** (chassi) e identificadores das centrais.
 
-## 15. Dados de terceiros e créditos
+## 16. Dados de terceiros e créditos
 
+- **`dtc_peugeot.json`** (opcional) é derivado de uma tabela de falhas Peugeot/Citroën em PDF (exportação de planilha), fornecida pelo autor do projeto. A origem e a licença dessa tabela não estão definidas aqui, por isso o arquivo **não é distribuído com este repositório**: ele fica só no computador do autor (fora do git). O app funciona sem ele, apenas sem as descrições da tabela.
 - Os **pares de endereços dos módulos candidatos** vêm do projeto público [arduino-psa-diag](https://github.com/ludwig-v/arduino-psa-diag) (`ECU_LIST.md`). Apenas a lista de endereços foi usada; as funções de escrita, reset e gravação desse projeto **não** foram incorporadas. Confira a licença dele ao redistribuir.
 - Referências consultadas (nenhum código copiado): [autowp.github.io](https://autowp.github.io/) (quadros CAN de carroceria da PSA, modelos antigos, não é diagnóstico) e [PSAVanCanBridge](https://github.com/morcibacsi/PSAVanCanBridge) (ponte VAN↔CAN).
 - Padrões usados: SAE J1979 / ISO 15031 (OBD-II), ISO 15765-4 e ISO 15765-2 (CAN e ISO-TP), ISO 14229 (UDS), ISO 14230 (KWP2000), conjunto de comandos ELM327.
 - "Peugeot", "Citroën", "PSA" e "ELM327" são marcas de seus respectivos titulares; este projeto não tem vínculo com eles.
 
-## 16. Glossário
+## 17. Glossário
 
 | Termo | Significado |
 |---|---|
@@ -404,7 +420,7 @@ Antes de publicar:
 | **Freeze frame** | Foto dos dados do motor no momento em que a falha ocorreu |
 | **Monitores de prontidão** | Testes internos de emissões (catalisador, EVAP, lambda...) que precisam estar completos |
 
-## 17. Log permanente de conexões
+## 18. Log permanente de conexões
 
 Todo uso da conexão com a central é gravado em **`logs/conexoes.log`** (criado ao lado do `app.py`), uma linha por evento, sempre acrescentando ao fim, com data, hora e fuso. Diferente do log da aba **Log** (memória, últimas 5.000 linhas, some ao fechar o app), este arquivo **não é apagado pelo app**. Também aparece na aba **Histórico**.
 
@@ -425,7 +441,7 @@ Todo uso da conexão com a central é gravado em **`logs/conexoes.log`** (criado
 
 O arquivo não guarda VIN nem leituras do veículo. A pasta `logs/` está no `.gitignore`: o histórico fica no seu computador e não vai para o GitHub.
 
-## 18. Versionamento e publicação
+## 19. Versionamento e publicação
 
 O app segue [SemVer](https://semver.org/lang/pt-BR/) (`MAIOR.MENOR.CORREÇÃO`). A versão está em `version.py`, aparece no cabeçalho do painel, em `/api/status` e ao iniciar o app. O histórico completo está em [CHANGELOG.md](CHANGELOG.md) e na aba **Histórico**.
 
@@ -442,7 +458,7 @@ O script atualiza `version.py` e `CHANGELOG.md`, faz o commit e cria a etiqueta 
 
 Repositório: https://github.com/leogvital/C4-Cactus-OBD2
 
-## 19. Licença
+## 20. Licença
 
 Código sob a **PolyForm Noncommercial License 1.0.0** (texto completo em [LICENSE](LICENSE)): você pode usar, estudar, copiar e modificar o programa para **fins pessoais e outros não comerciais**. **Uso comercial não é permitido.** O código é público para leitura e uso pessoal, mas essa licença não é de código aberto no sentido da OSI, justamente por proibir o uso comercial.
 

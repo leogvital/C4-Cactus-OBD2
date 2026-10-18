@@ -2,6 +2,9 @@
 
 Formato [SemVer](https://semver.org/lang/pt-BR/): `MAIOR.MENOR.CORREÇÃO`. Cada publicação recebe uma versão aqui, uma etiqueta `vX.Y.Z` no git e o número é exibido no painel. Para publicar: `python tools/release.py <patch|minor|major> "resumo"`.
 
+## [1.1.3] - 2026-10-17
+- README volta a documentar a tabela de falhas Peugeot/Citroën (arquivo opcional local, não distribuído no repositório)
+
 ## [1.1.2] - 2026-10-17
 - Restaura as descrições da tabela de falhas como recurso opcional: usa o arquivo local, se existir; sem ele o app funciona e esconde a busca
 
