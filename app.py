@@ -37,6 +37,7 @@ class State:
         self.log = []
         self.scan = {"running": False, "step": "", "done": 0, "error": "", "result": None}
         self.connected_at = None
+        self.status = None         # PID 01 (MIL, nº de falhas), lido de tempos em tempos para o painel
 
     def log_add(self, msg):
         elm327.log("INFO", msg)
@@ -104,11 +105,11 @@ class State:
             self.thread.join(timeout=2)
         if self.elm:
             self.elm.close()
-        self.elm, self.live = None, {}
+        self.elm, self.live, self.status = None, {}, None
 
     def _poll(self):
         elm327.set_source("poll")   # marca esses comandos como "leitura ao vivo" no log
-        slow_i = 0
+        slow_i = cycles = 0
         while not self.stop.is_set() and self.elm and self.elm.connected:
             fast = [p for p in self.poll_pids if p in pids.FAST]
             slow = [p for p in self.poll_pids if p not in pids.FAST]
@@ -129,6 +130,12 @@ class State:
                 if r:
                     r["t"] = time.time()
                     self.live[pid] = r
+            cycles += 1
+            if cycles % 25 == 1:                   # status (luz de injeção) a cada ~25 ciclos
+                try:
+                    self.status = pids.decode_status(self.elm.read_pid("01", retries=1))
+                except ELMError:
+                    pass
             time.sleep(0.02)
 
 
@@ -201,7 +208,7 @@ def make_handler(state):
                             pass
                     self._json({"entries": elm327.log_since(since)})
                 elif self.path == "/api/live":
-                    self._json({"values": list(state.live.values()), "error": state.error,
+                    self._json({"values": list(state.live.values()), "status": state.status, "error": state.error,
                                 "connected": bool(state.elm and state.elm.connected)})
                 elif self.path == "/api/dtcs":
                     elm = self._need()

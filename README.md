@@ -130,8 +130,28 @@ O painel escuta apenas em `127.0.0.1` (não fica exposto na rede).
 
 ## 5. Abas do painel
 
+### Painel
+Painel de instrumentos animado, como o de um carro: **conta-giros**, **velocímetro**, **temperatura da água** e **combustível**, com ponteiros que se movem suavemente e um arco que acende conforme o valor. Zona vermelha no conta-giros (acima de 6.000 rpm), temperatura fria/quente colorida e luzes de aviso:
+
+| Luz | Acende quando |
+|---|---|
+| Adaptador | conectado ao adaptador |
+| Motor ligado | rotação acima de 400 rpm |
+| Injeção | a luz de injeção (MIL) do carro está acesa (status lido a cada poucos segundos) |
+| Falhas | há códigos de falha confirmados |
+| Carga | tensão da ECU abaixo de 13 V (alerta) ou 12 V (crítico) com o motor ligado, ou acima de 15,2 V |
+| Água | acima de 105 °C (alerta) / 112 °C (crítico), ou azul abaixo de 50 °C (motor frio) |
+| Combustível | abaixo de 15 % (só se o carro informar) |
+
+Abaixo dos mostradores há cartões com tensão, carga, borboleta, pedal, ar de admissão, pressão do coletor, avanço e etanol.
+
+- **O Cactus não informa o nível de combustível pela porta OBD**, então o mostrador de combustível fica em `N/D` neste carro (aparece normalmente em carros que informam o PID 2F).
+- **Modo demonstração:** simula valores para ver o painel funcionando sem o carro (aparece a etiqueta DEMONSTRAÇÃO). Também abre direto em http://localhost:8080/#demo.
+- **Teste dos instrumentos:** ponteiros vão ao fim da escala e voltam e as luzes acendem, como ao ligar um carro. Roda sozinho ao abrir a página.
+- Valores com mais de 30 s sem atualização somem (`--`). Os ponteiros usam animação CSS e respeitam a opção "reduzir movimento" do sistema.
+
 ### Ao vivo
-RPM, velocidade, temperatura da água e do ar, carga, borboleta, MAP, avanço, ajustes de combustível (curto e longo), lambdas, tensão da ECU, etanol no combustível, purga do EVAP e outros. **Só aparecem os PIDs que a central declara suportar.** RPM e velocidade são lidos a cada ciclo; os demais entram em rodízio (um por ciclo), para manter a leitura rápida.
+Cartões com mini-gráfico do histórico recente (últimas 60 leituras). RPM, velocidade, temperatura da água e do ar, carga, borboleta, MAP, avanço, ajustes de combustível (curto e longo), lambdas, tensão da ECU, etanol no combustível, purga do EVAP e outros. **Só aparecem os PIDs que a central declara suportar.** RPM e velocidade são lidos a cada ciclo; os demais entram em rodízio (um por ciclo), para manter a leitura rápida.
 
 PIDs decodificados (modo 01): 03 estado do sistema de combustível · 04 carga do motor · 05 temp. água · 06/07 ajuste de combustível curto/longo B1 · 0A pressão de combustível · 0B MAP · 0C RPM · 0D velocidade · 0E avanço · 0F temp. ar admissão · 10 MAF · 11 borboleta · 14/15 lambdas B1S1/B1S2 · 1F tempo desde a partida · 1C norma OBD · 21 distância com MIL · 2E purga EVAP · 2F nível de combustível · 30 partidas desde apagar falhas · 33 pressão barométrica · 42 tensão da ECU · 43 carga absoluta · 44 lambda comandada · 45 borboleta relativa · 46 temp. ambiente · 47 borboleta absoluta B · 49/4A pedal D/E · 4D tempo com MIL · 51 tipo de combustível · 52 etanol · 5C temp. óleo · 5E consumo.
 
@@ -311,7 +331,7 @@ Exemplo para testar tudo: `python simulator.py --engine-off --two-ecus`
 | GET | `/api/status` | | Conexão, host, porta, versão do adaptador, protocolo e `app_version` |
 | GET | `/api/connection-log` | | Últimos 200 eventos do log permanente de conexões |
 | GET | `/api/changelog` | | Versão atual e texto do CHANGELOG.md |
-| GET | `/api/live` | | Valores ao vivo atuais |
+| GET | `/api/live` | | Valores ao vivo atuais e `status` (luz de injeção e nº de falhas, atualizado a cada poucos segundos) |
 | GET | `/api/dtcs` | | Falhas (03/07/0A), status MIL e descrições (inclui `peugeot`) |
 | GET | `/api/info` | | VIN, tensão, PIDs suportados, versão, protocolo |
 | GET | `/api/log?since=N` | `since` | Entradas do log a partir do índice N |
