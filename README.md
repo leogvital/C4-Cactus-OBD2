@@ -157,6 +157,8 @@ Abaixo dos mostradores há cartões com tensão, carga, borboleta, pedal, ar de 
 - **O Cactus não informa o nível de combustível pela porta OBD**, então o mostrador de combustível fica em `N/D` neste carro (aparece normalmente em carros que informam o PID 2F).
 - **Modo demonstração:** simula valores para ver o painel funcionando sem o carro (aparece a etiqueta DEMONSTRAÇÃO). Também abre direto em http://localhost:8080/#demo (e `/#classic-demo` para o layout clássico).
 - **Animação de teste:** ponteiros vão ao fim da escala e voltam e as luzes acendem, como ao ligar um carro. É **só uma animação na tela**: não envia nenhum comando ao carro e não testa o painel de instrumentos do veículo. Roda sozinha ao abrir a página.
+- **Leitura rápida** (botão no topo, ligada por padrão): nas leituras ao vivo o app acrescenta o sufixo de contagem do ELM327 (por exemplo `010C1`), e o adaptador devolve assim que a 1ª central responde, em vez de esperar o tempo limite de ~200 ms. No log do seu carro cada leitura levava ~205 ms (ou ~409 ms com duas centrais), tempo que era quase todo espera. A taxa medida aparece no rodapé do painel ("N leituras/s"). Se o adaptador não aceitar o sufixo, o app volta sozinho ao modo normal. O status (luz de injeção) continua sendo lido pelo modo normal.
+- **Luz de carga:** só avalia a tensão 12 s depois de o motor pegar, porque no arranque a tensão cai (motor de partida) antes de o alternador carregar. Rotação, velocidade, temperatura do motor e tensão são lidas a cada ciclo.
 - Valores com mais de 30 s sem atualização somem (`--`). Os ponteiros usam animação CSS e respeitam a opção "reduzir movimento" do sistema.
 
 ### Ao vivo
@@ -286,6 +288,7 @@ No painel, use IP `127.0.0.1` e porta `35000`. O simulador gera RPM e velocidade
 | `--refuse-reset` | A ECU simulada recusa o reset (`7F 11 22`) |
 | `--two-ecus` | Duas centrais (`7E8` e `7E9`) respondendo ao OBD, como no carro real |
 | `--short-vin` | Devolve o VIN truncado, como alguns clones |
+| `--elm-timing` | Imita o atraso real do ELM327 (~200 ms por resposta, ~400 ms com duas centrais), para medir o efeito da leitura rápida |
 
 Também simula, quando os cabeçalhos estão ativos, módulos fictícios:
 
@@ -353,6 +356,7 @@ Exemplo para testar tudo: `python simulator.py --engine-off --two-ecus`
 | POST | `/api/ecu-reset` | `{confirm: true, ecu_id, sub}` | Reset da ECU (`sub` = `01` ou `03`) |
 | POST | `/api/raw` | `{cmd}` | Terminal (AT e modos de leitura) |
 | POST | `/api/log/clear` | | Limpa o log |
+| POST | `/api/fast` | `{on: true\|false}` | Liga ou desliga a leitura rápida (`/api/live` informa `fast` e `rate`, em leituras/s) |
 | POST | `/api/scan/start` | | Inicia o diagnóstico de capacidades |
 | POST | `/api/uds` | `{req_id, resp_id, cmd}` | Consulta somente leitura a um módulo |
 | POST | `/api/module-dtcs` | `{req_id, resp_id, hint}` | Lê e interpreta as falhas de um módulo (`hint`: `abs`, `airbag`, `cluster`) |
@@ -483,6 +487,7 @@ Todo uso da conexão com a central é gravado em **`logs/conexoes.log`** (criado
 | `APAGAR_FALHAS` / `RESET_ECU` | Ações que alteram a central |
 | `DIAGNOSTICO_INICIO` / `DIAGNOSTICO_FIM` | Varredura de capacidades |
 | `CONSULTA_MODULO` / `FALHAS_MODULO` / `TERMINAL` | Consultas manuais (aba Módulos e Terminal) |
+| `LEITURA_RAPIDA` | Leitura rápida ligada ou desligada |
 
 O arquivo não guarda VIN nem leituras do veículo. A pasta `logs/` está no `.gitignore`: o histórico fica no seu computador e não vai para o GitHub.
 

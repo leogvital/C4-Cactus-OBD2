@@ -18,7 +18,8 @@ HDRON = False
 SIM_RESET_REFUSE = "--refuse-reset" in sys.argv
 ENGINE_OFF = "--engine-off" in sys.argv
 TWO_ECUS = "--two-ecus" in sys.argv      # motor + outra central respondendo (como no Cactus real)
-SHORT_VIN = "--short-vin" in sys.argv    # clone que devolve só o 1º quadro do VIN
+SHORT_VIN = "--short-vin" in sys.argv
+ELM_TIMING = "--elm-timing" in sys.argv   # imita o atraso real do ELM327 (~200 ms por resposta; 2 centrais ~400 ms)    # clone que devolve só o 1º quadro do VIN
 
 
 def pid_values():
@@ -259,6 +260,14 @@ def _respond_headers(c):
     return "\r".join(lines) if lines else "NO DATA"
 
 
+def _strip_count(cmd):
+    """Sufixo de contagem do ELM327 (ex.: 010C1): devolve (comando sem o sufixo, True se havia)."""
+    c = cmd.strip().upper().replace(" ", "")
+    if len(c) == 5 and c.startswith("01"):
+        return c[:4], True
+    return cmd, False
+
+
 def respond(cmd):
     global HDRON
     c0 = cmd.strip().upper().replace(" ", "")
@@ -303,8 +312,13 @@ class Handler(socketserver.BaseRequestHandler):
                 cmd = line.decode(errors="ignore")
                 if not cmd.strip():
                     continue
+                cmd, had = _strip_count(cmd)
                 time.sleep(0.03)
+                if ELM_TIMING and not cmd.strip().upper().startswith("AT"):
+                    time.sleep(0.02 if had else (0.4 if TWO_ECUS else 0.2))
                 out = respond(cmd)
+                if had:
+                    out = out.split("\r")[0]   # só a 1ª resposta
                 print(f"  > {cmd}  < {out.replace(chr(13), ' | ')}")
                 self.request.sendall(f"{out}\r\r>".encode())
         print("cliente desconectou")

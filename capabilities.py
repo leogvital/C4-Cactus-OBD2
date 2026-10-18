@@ -65,22 +65,34 @@ class Scanner:
     def __init__(self, elm, prog):
         self.elm, self.prog = elm, prog
         self.resp = ""   # ID de resposta (7E8...)
+        self.alive = False   # a central já respondeu alguma vez (só então vale repetir leituras sem resposta)
 
     # envia e devolve (payload da central-alvo ou None, texto cru)
-    def ask(self, cmd, wait=2.5):
-        raw = self.elm.send(cmd, wait=wait)
-        mine = [f for f in frames(raw) if f["id"] == self.resp]
-        for f in reversed(mine):  # ignora "resposta pendente" (7F xx 78)
-            d = f["data"]
-            if not (len(d) >= 3 and d[0] == 0x7F and d[2] == 0x78):
+    def ask(self, cmd, wait=2.5, retries=0):
+        """Envia e devolve (payload da central-alvo ou None, texto cru). Com retries, repete se a central
+        (que já respondeu antes) falhar, porque um NO DATA isolado é comum nos clones ELM327."""
+        for _ in range(retries + 1):
+            raw = self.elm.send(cmd, wait=wait)
+            mine = [x for x in frames(raw) if x["id"] == self.resp]
+            if mine:
+                self.alive = True
+            d = None
+            for x in reversed(mine):  # ignora "resposta pendente" (7F xx 78)
+                p = x["data"]
+                if not (len(p) >= 3 and p[0] == 0x7F and p[2] == 0x78):
+                    d = p
+                    break
+            if d is None and mine:
+                d = mine[-1]["data"]
+            if d is not None or not self.alive:
                 return d, raw
-        return (mine[-1]["data"] if mine else None), raw
+        return None, raw
 
     def support(self, mode, hdr):
         sup, base = [], 0
         while base <= 0xE0:
             cmd = f"{mode:02X}{base:02X}" + ("00" if mode == 2 else "")
-            d, _ = self.ask(cmd)
+            d, _ = self.ask(cmd, retries=2)
             if not d or d[0] != mode + 0x40 or len(d) < hdr + 4:
                 break
             m = int.from_bytes(d[hdr:hdr + 4], "big")
@@ -150,7 +162,7 @@ class Scanner:
     def dtcs(self):
         res = {}
         for m in ("03", "07", "0A"):
-            d, _ = self.ask(m, 3.0)
+            d, _ = self.ask(m, 3.0, retries=2)
             exp = int(m, 16) + 0x40
             if d and d[0] == exp:
                 body = d[2:]

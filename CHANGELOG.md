@@ -2,6 +2,16 @@
 
 Formato [SemVer](https://semver.org/lang/pt-BR/): `MAIOR.MENOR.CORREÇÃO`. Cada publicação recebe uma versão aqui, uma etiqueta `vX.Y.Z` no git e o número é exibido no painel. Para publicar: `python tools/release.py <patch|minor|major> "resumo"`.
 
+## [1.5.0] - 2026-10-18
+### Novo
+- **Leitura rápida** (botão no painel, `/api/fast`): as leituras ao vivo pedem só 1 resposta (sufixo de contagem do ELM327), sem esperar o tempo limite do adaptador. No simulador com o atraso medido no log real, de 2,2 para 17,8 leituras/s. O painel mostra as leituras/s. Se o adaptador recusar o sufixo, volta ao modo normal.
+- Simulador: opção `--elm-timing`, que imita o atraso real do ELM327.
+
+### Corrigido (a partir do teste real de 18/10/2026)
+- **Luz de carga acendia no arranque** com a tensão em 11,9 V (motor de partida): agora só avalia 12 s depois de o motor pegar.
+- **Temperatura do motor e tensão** demoravam a aparecer: passam a ser lidas a cada ciclo, junto com rotação e velocidade.
+- **A varredura de capacidades cortava a lista de PIDs** quando uma leitura isolada falhava (o `0120` deu `NO DATA` uma vez e a lista caiu de 28 para 16 PIDs): leituras que falham numa central que já respondeu são repetidas, e as falhas do modo 03 não viram mais `null` por um erro isolado.
+
 ## [1.4.0] - 2026-10-18
 - Painel em tela cheia (botão ou tecla F), com ocultação automática dos botões e tela sempre ligada
 

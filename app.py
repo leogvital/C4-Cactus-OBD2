@@ -6,6 +6,7 @@ Uso:
 Abra http://localhost:8080 no navegador.
 """
 import argparse
+import collections
 import json
 import os
 import threading
@@ -37,6 +38,8 @@ class State:
         self.log = []
         self.scan = {"running": False, "step": "", "done": 0, "error": "", "result": None}
         self.connected_at = None
+        self.fast = True           # leitura rápida (sufixo de contagem nos PIDs ao vivo)
+        self.reads = collections.deque(maxlen=400)   # instantes das leituras, para medir leituras/s
         self.status = None         # PID 01 (MIL, nº de falhas), lido de tempos em tempos para o painel
 
     def log_add(self, msg):
@@ -46,6 +49,7 @@ class State:
         self.disconnect()
         self.host, self.port = host, port
         elm = ELM327(host, port)
+        elm.fast = self.fast
         try:
             elm.connect()
         except ELMError as e:
@@ -107,6 +111,11 @@ class State:
             self.elm.close()
         self.elm, self.live, self.status = None, {}, None
 
+    def rate(self):
+        """Leituras por segundo nos últimos 5 s."""
+        lim = time.time() - 5
+        return round(sum(1 for t in list(self.reads) if t > lim) / 5, 1)
+
     def _poll(self):
         elm327.set_source("poll")   # marca esses comandos como "leitura ao vivo" no log
         slow_i = cycles = 0
@@ -114,14 +123,16 @@ class State:
             fast = [p for p in self.poll_pids if p in pids.FAST]
             slow = [p for p in self.poll_pids if p not in pids.FAST]
             batch = list(fast)
-            if slow:                       # 1 PID lento por ciclo, em rodízio
-                batch.append(slow[slow_i % len(slow)])
-                slow_i += 1
+            for _ in range(2 if self.fast else 1):     # PIDs lentos em rodízio (2 por ciclo na leitura rápida)
+                if slow:
+                    batch.append(slow[slow_i % len(slow)])
+                    slow_i += 1
             for pid in batch:
                 if self.stop.is_set():
                     return
                 try:
-                    r = pids.decode(pid, self.elm.read_pid(pid, retries=1))
+                    r = pids.decode(pid, self.elm.read_pid(pid, retries=1, quick=True))
+                    self.reads.append(time.time())
                 except ELMError as e:
                     self.error = str(e)
                     self.log_add(f"Conexão perdida: {e}")
@@ -176,7 +187,7 @@ def make_handler(state):
                     self._json({
                         "connected": c, "host": state.host, "port": state.port, "error": state.error,
                         "version": state.elm.version if c else "", "protocol": state.elm.protocol if c else "",
-                        "app_version": __version__, "dtc_table": pids.peugeot_available(),
+                        "app_version": __version__, "fast": state.fast, "dtc_table": pids.peugeot_available(),
                     })
                 elif self.path == "/api/changelog":
                     try:
@@ -208,7 +219,7 @@ def make_handler(state):
                             pass
                     self._json({"entries": elm327.log_since(since)})
                 elif self.path == "/api/live":
-                    self._json({"values": list(state.live.values()), "status": state.status, "error": state.error,
+                    self._json({"values": list(state.live.values()), "status": state.status, "rate": state.rate(), "fast": state.fast, "error": state.error,
                                 "connected": bool(state.elm and state.elm.connected)})
                 elif self.path == "/api/dtcs":
                     elm = self._need()
@@ -257,6 +268,12 @@ def make_handler(state):
                     elm = self._need()
                     audit.record("FALHAS_MODULO", f"{b.get('req_id')}->{b.get('resp_id')}", b.get("hint"))
                     self._json(modules.read_dtcs(elm, b.get("req_id"), b.get("resp_id"), b.get("hint")))
+                elif self.path == "/api/fast":
+                    state.fast = bool(b.get("on"))
+                    if state.elm:
+                        state.elm.fast = state.fast
+                    audit.record("LEITURA_RAPIDA", "ligada" if state.fast else "desligada")
+                    self._json({"ok": True, "fast": state.fast})
                 elif self.path == "/api/log/clear":
                     elm327.log_clear()
                     self._json({"ok": True})

@@ -49,6 +49,9 @@ class ELM327:
         self.lock = threading.RLock()
         self.version = ""
         self.protocol = ""
+        self.fast = True          # leitura rápida: pede só 1 resposta (sufixo de contagem) nas leituras ao vivo
+        self._no_count = False    # o adaptador recusou o sufixo
+        self.last_raw = ""
 
     # ---------- conexão ----------
     def connect(self):
@@ -150,6 +153,7 @@ class ELM327:
     def query(self, cmd):
         """Envia comando OBD e devolve bytes de dados (já sem o cabeçalho 4x yy)."""
         r = self.send(cmd)
+        self.last_raw = r
         if any(k in r for k in ("NO DATA", "UNABLE", "ERROR", "?", "STOPPED")):
             return None
         return r
@@ -170,15 +174,28 @@ class ELM327:
                         pass
         return None
 
-    def read_pid(self, pid, retries=0):
+    def read_pid(self, pid, retries=0, quick=False):
+        """Lê um PID do modo 01. Com quick=True e leitura rápida ligada, acrescenta o sufixo "1" (ex.: 010C1):
+        o ELM327 devolve assim que a 1ª central responde, sem esperar o tempo limite (~200 ms) por outras."""
         pid = pid.upper()
+        if quick and self.fast and not self._no_count:
+            for _ in range(retries + 1):
+                d = self.raw_bytes("01" + pid + "1", "41" + pid)
+                if d is not None:
+                    return d
+                if "?" in self.last_raw:        # adaptador não entende o sufixo: volta ao modo normal
+                    self._no_count = True
+                    log("INFO", "O adaptador não aceitou o sufixo de contagem; leitura rápida desligada")
+                    break
+            else:
+                return None
         return self.raw_bytes("01" + pid, "41" + pid, retries)
 
     def supported_pids(self):
         sup = set()
         base = 0x00
         while True:
-            d = self.read_pid(f"{base:02X}")
+            d = self.read_pid(f"{base:02X}", retries=2)   # uma falha isolada não pode cortar a lista
             if not d or len(d) < 4:
                 break
             mask = int.from_bytes(bytes(d[:4]), "big")

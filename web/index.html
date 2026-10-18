@@ -200,6 +200,7 @@
         <div class="dash-actions">
           <span id="demoBadge">DEMONSTRAÇÃO</span>
           <button id="btnDemo" class="sec" title="Simula valores para ver o painel funcionando, sem o carro">Modo demonstração</button>
+          <button id="btnFast" class="sec" title="Pede só 1 resposta por leitura (sufixo de contagem do ELM327): leituras bem mais rápidas">Leitura rápida: ligada</button>
           <button id="btnFs" class="sec" title="Tela cheia (tecla F). Esc para sair">Tela cheia</button>
           <button id="btnSweep" class="sec" title="Só animação na tela: não envia nada ao carro e não testa o painel do veículo">Animação de teste</button>
         </div>
@@ -761,7 +762,7 @@ const TILES = [
 $('#tiles').innerHTML = TILES.map(([p, n, u]) =>
   `<div class="tile" id="tl-${p}"><div class="n">${n}</div><div><span class="v">--</span><span class="u">${u}</span></div><div class="bar"><i></i></div></div>`).join('');
 
-let sweeping = false, demoOn = false, dashOn = false;
+let sweeping = false, demoOn = false, dashOn = false, runSince = 0, dashRate = null, fastOn = true;
 function applyDash(m, st, conn) {
   if (sweeping) return;
   const rpm = m['0C'], spd = m['0D'], tmp = m['05'], fuel = m['2F'], volt = m['42'];
@@ -773,7 +774,11 @@ function applyDash(m, st, conn) {
   setLight('run', rpm > 400 ? 'ok' : '');
   setLight('mil', st && st.mil ? 'bad' : '', st ? (st.mil ? 'Luz de injeção ACESA' : 'Luz de injeção apagada') : 'Status ainda não lido');
   setLight('pend', st && st.dtc_count > 0 ? 'warn' : '', st ? st.dtc_count + ' falha(s) confirmada(s)' : '');
-  const ch = volt != null && rpm > 400 ? (volt < 12 || volt > 15.2 ? 'bad' : volt < 13 ? 'warn' : '') : '';
+  // a luz de carga só avalia 12 s depois de o motor pegar: no arranque a tensão cai (motor de partida) e o alternador ainda não carrega
+  const nowT = performance.now();
+  if (rpm > 400) { if (!runSince) runSince = nowT; } else runSince = 0;
+  const settled = runSince && (nowT - runSince) > 12000;
+  const ch = volt != null && settled ? (volt < 12 || volt > 15.2 ? 'bad' : volt < 13 ? 'warn' : '') : '';
   setLight('batt', ch, volt != null ? 'Tensão ' + volt.toFixed(1) + ' V' : 'Carga da bateria');
   setLight('temp', tmp == null ? '' : tmp > 112 ? 'bad' : tmp > 105 ? 'warn' : tmp < 50 ? 'info' : '', tmp != null && tmp < 50 ? 'Motor frio' : 'Temperatura do motor');
   setLight('fuel', fuel != null && fuel < 15 ? 'warn' : '', fuel == null ? 'Nível de combustível não informado pelo carro via OBD' : 'Combustível');
@@ -785,7 +790,7 @@ function applyDash(m, st, conn) {
   digiUpdate(m, st, conn);
   $('#dashNote').textContent = demoOn ? 'Valores simulados, não vêm do carro.' :
     !conn ? 'Desconectado: conecte ao adaptador para ver os dados reais ou use o modo demonstração.' :
-    (fuel == null ? 'O Cactus não informa o nível de combustível pela porta OBD (o ponteiro fica em N/D). ' : '') + 'Dados reais da central do motor.';
+    (fuel == null ? 'O Cactus não informa o nível de combustível pela porta OBD (o ponteiro fica em N/D). ' : '') + 'Dados reais da central do motor.' + (conn && dashRate != null ? ` · ${dashRate} leituras/s` : '');
 }
 
 function demoValues() {
@@ -802,12 +807,15 @@ async function dashTick() {
     if (demoOn) { const d = demoValues(); applyDash(d.m, d.st, true); }
     else {
       const l = await api('live'), now = Date.now() / 1000, m = {};
+      dashRate = l.rate; if (l.fast != null && l.fast !== fastOn) { fastOn = l.fast; fastBtn(); }
       (l.values || []).forEach(v => { if (now - v.t < 30 && typeof v.value === 'number') m[v.pid] = v.value; });
       applyDash(m, l.status || null, l.connected);
     }
   } catch (e) { applyDash({}, null, false); }
   setTimeout(dashTick, demoOn ? 120 : 250);
 }
+const fastBtn = () => { $('#btnFast').textContent = 'Leitura rápida: ' + (fastOn ? 'ligada' : 'desligada'); };
+$('#btnFast').onclick = async () => { try { const r = await api('fast', {on: !fastOn}); fastOn = r.fast; fastBtn(); } catch (e) { showErr(e.message); } };
 const startDash = () => { if (!dashOn) { dashOn = true; dashTick(); } };
 
 

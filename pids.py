@@ -60,8 +60,8 @@ PIDS = {
 
 # conjunto padrão exibido ao vivo no painel
 LIVE_DEFAULT = ["0C", "0D", "05", "0F", "04", "11", "0B", "10", "0E", "06", "07", "14", "15", "42", "52", "2E", "47", "2F"]
-# lidos a cada ciclo (os demais, um por ciclo em rodízio) -> RPM/velocidade atualizam rápido
-FAST = ["0C", "0D"]
+# lidos a cada ciclo (os demais, em rodízio): rotação, velocidade, temperatura do motor e tensão
+FAST = ["0C", "0D", "05", "42"]
 
 
 def decode(pid, data):
