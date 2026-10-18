@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.idea/
+.vscode/
+*.log
+log_obd_*.txt
+diagnostico_capacidades_*.json
+logs/
+testesc4/

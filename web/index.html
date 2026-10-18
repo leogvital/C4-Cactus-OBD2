@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico PSA · C4 Cactus</title>
+<style>
+  :root{--bg:#0f1318;--card:#1a2029;--line:#2a3340;--tx:#e8edf3;--mut:#8b97a6;--ok:#3ecf8e;--warn:#f5a524;--bad:#ef5350;--ac:#4aa3ff}
+  @media (prefers-color-scheme: light){:root{--bg:#f3f5f8;--card:#fff;--line:#d9dfe7;--tx:#16202b;--mut:#5d6b7c}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,sans-serif}
+  header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:2}
+  header h1{font-size:17px;margin:0 auto 0 0}
+  input,button,select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+  button{cursor:pointer;background:var(--ac);border-color:var(--ac);color:#fff}
+  button.sec{background:var(--bg);color:var(--tx);border-color:var(--line)}
+  button.danger{background:var(--bad);border-color:var(--bad)}
+  button:disabled{opacity:.5;cursor:default}
+  #host{width:130px}#port{width:70px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--bad);display:inline-block;margin-right:6px}
+  .dot.on{background:var(--ok)}
+  nav{display:flex;gap:4px;padding:10px 16px 0}
+  nav button{background:transparent;color:var(--mut);border:0;border-bottom:2px solid transparent;border-radius:0}
+  nav button.act{color:var(--tx);border-bottom-color:var(--ac)}
+  main{padding:16px;max-width:1100px;margin:auto}
+  .tab{display:none}.tab.act{display:block}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .card .n{color:var(--mut);font-size:12px}
+  .card .v{font-size:28px;font-weight:600;font-variant-numeric:tabular-nums}
+  .card .u{font-size:13px;color:var(--mut);margin-left:4px;font-weight:400}
+  .big{grid-column:span 2}
+  .banner{padding:10px 14px;border-radius:10px;margin-bottom:12px;background:#ef535022;border:1px solid var(--bad)}
+  .banner.ok{background:#3ecf8e22;border-color:var(--ok)}
+  table{width:100%;border-collapse:collapse}
+  td,th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+  .code{font-family:ui-monospace,monospace;font-weight:700}
+  .pill{padding:2px 8px;border-radius:99px;font-size:12px}
+  .pill.ok{background:#3ecf8e33;color:var(--ok)}.pill.no{background:#f5a52433;color:var(--warn)}
+  pre{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;height:260px;overflow:auto;margin:0}
+  .row{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.row input{flex:1;min-width:160px}
+  h3{margin:18px 0 8px}
+  .mut{color:var(--mut)}
+  #logBox{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;height:60vh;overflow:auto;font:12.5px/1.5 ui-monospace,monospace;white-space:pre-wrap;word-break:break-all}
+  .l-TX{color:var(--ac)}.l-ERR{color:var(--bad)}.l-INFO{color:var(--warn)}.l-poll{opacity:.65}
+  .tools{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .tools label{display:flex;gap:6px;align-items:center;cursor:pointer}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:18px}
+  .box h3{margin:0 0 6px}
+  #ecuRes{margin-top:10px}
+  details.ecu{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0}
+  details.ecu>summary{cursor:pointer;font-size:15px}
+  details.sec{margin:10px 0 0 4px}details.sec>summary{cursor:pointer;color:var(--ac)}
+  table.sm td,table.sm th{font-size:13px;padding:4px 6px}
+  .ok{color:var(--ok)}.bad{color:var(--bad)}
+  #scanBar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin:10px 0}
+  #scanBar i{display:block;height:100%;width:0;background:var(--ac);transition:width .4s}
+</style>
+</head>
+<body>
+<header>
+  <h1><span id="dot" class="dot"></span>Diagnóstico PSA · C4 Cactus 1.6 <small id="ver" class="mut" style="font-weight:400;font-size:12px"></small></h1>
+  <input id="host" value="192.168.0.10" aria-label="IP do adaptador">
+  <input id="port" value="35000" aria-label="Porta">
+  <button id="btnConn">Conectar</button>
+</header>
+<nav>
+  <button class="act" data-t="live">Ao vivo</button>
+  <button data-t="dtc">Falhas (DTC)</button>
+  <button data-t="info">Info</button>
+  <button data-t="term">Terminal</button>
+  <button data-t="cap">Capacidades</button>
+  <button data-t="mod">Módulos</button>
+  <button data-t="log">Log</button>
+  <button data-t="hist">Histórico</button>
+</nav>
+<main>
+  <div id="err" class="banner" style="display:none"></div>
+
+  <section id="live" class="tab act">
+    <div class="grid" id="cards"><p class="mut">Conecte ao adaptador para ver os dados.</p></div>
+  </section>
+
+  <section id="dtc" class="tab">
+    <div class="row"><button id="btnDtc">Ler falhas</button><button id="btnClear" class="danger">Apagar falhas</button></div>
+    <div id="dtcOut" class="mut">Clique em “Ler falhas”.</div>
+
+    <div class="box">
+      <h3>Consultar tabela Peugeot/Citroën</h3>
+      <p class="mut" style="margin:0 0 10px">Digite um código (ex.: <code>P0420</code>, <code>P04</code>) ou uma palavra em inglês (ex.: <code>misfire</code>, <code>lambda</code>).
+      Descrições em inglês, de uma tabela de famílias de módulos Peugeot/Citroën: o mesmo código pode ter textos diferentes por família, e ela não é específica do seu Cactus.</p>
+      <div class="row"><input id="dq" placeholder="código ou palavra"><button id="btnDq" class="sec">Consultar</button></div>
+      <div id="dqOut"></div>
+    </div>
+
+    <div class="box">
+      <h3>Reset da ECU (central do motor)</h3>
+      <p class="mut" style="margin:0 0 10px">Envia o serviço UDS 0x11 (ECU Reset) para a central do motor. Só com <b>motor desligado e ignição ligada</b>.
+      Não apaga falhas (use “Apagar falhas” para isso). A central pode recusar ou não responder — o resultado e a resposta crua aparecem aqui e na aba Log.</p>
+      <div class="row">
+        <input id="ecuId" value="7E0" style="max-width:90px;flex:none" aria-label="ID CAN da ECU" title="ID CAN de requisição da ECU (padrão OBD do motor: 7E0)">
+        <select id="ecuSub" aria-label="Tipo de reset">
+          <option value="01">01 · Hard reset (reinício completo)</option>
+          <option value="03">03 · Soft reset</option>
+        </select>
+        <button id="btnEcu" class="danger">Resetar ECU</button>
+      </div>
+      <div id="ecuRes"></div>
+    </div>
+  </section>
+
+  <section id="info" class="tab">
+    <div class="row"><button id="btnInfo">Ler informações</button></div>
+    <div id="infoOut" class="mut"></div>
+  </section>
+
+  <section id="term" class="tab">
+    <p class="mut">Comandos AT e modos de leitura (01, 02, 03, 07, 09, 0A). Ex.: <code>ATRV</code>, <code>010C</code>, <code>0902</code>.</p>
+    <pre id="termOut"></pre>
+    <div class="row"><input id="cmd" placeholder="comando"><button id="btnSend" class="sec">Enviar</button></div>
+  </section>
+  <section id="cap" class="tab">
+    <p class="mut">Sonda, <b>somente leitura</b>, tudo o que cada central responde: dados ao vivo (modo 01), freeze frame (02), falhas (03/07/0A),
+    testes de monitoramento (06), identificação (09) e UDS (0x22/0x19/0x3E). Não apaga, não reseta e não escreve nada.
+    Leva de 1 a 3 minutos no carro e <b>pausa</b> a aba Ao vivo enquanto roda. Use com a ignição ligada.</p>
+    <div class="row"><button id="btnScan">Executar diagnóstico</button><button id="btnScanDl" class="sec" disabled>Baixar relatório (.json)</button></div>
+    <div id="scanBar" style="display:none"><i></i></div>
+    <div id="scanStep" class="mut"></div>
+    <div id="scanOut"></div>
+  </section>
+
+  <section id="mod" class="tab">
+    <div class="banner" style="background:#f5a52422;border-color:var(--warn)">
+      <b>Avançado · somente leitura.</b> Envia consultas a qualquer módulo CAN pelo ID que você informar. Serviços de escrita, reset, apagar falhas,
+      segurança, atuadores e rotinas são <b>bloqueados</b>. O app não traz endereços de módulos PSA embutidos: use os IDs do seu software de diagnóstico.
+    </div>
+    <div class="row">
+      <input id="mReq" placeholder="ID requisição (ex.: 7E0)" style="max-width:190px;flex:none">
+      <input id="mResp" placeholder="ID resposta (ex.: 7E8)" style="max-width:190px;flex:none">
+      <input id="mCmd" placeholder="comando hex (ex.: 22F190)" style="max-width:220px;flex:none">
+      <button id="btnMod">Enviar</button>
+      <button id="btnProbe" class="sec" title="Envia 3E00, 22F190 e 1A87 ao módulo">Sondar módulo</button>
+    </div>
+    <div class="row">
+      <select id="mPick" style="max-width:420px;flex:1" aria-label="Candidatos de módulos PSA">
+        <option value="">Candidatos de módulos PSA (não validados no seu carro)…</option>
+      </select>
+      <button id="btnProbeAll" class="sec">Sondar todos os candidatos</button>
+    </div>
+    <p class="mut" style="margin:0">Endereços compilados do projeto público
+      <a href="https://github.com/ludwig-v/arduino-psa-diag" target="_blank" rel="noopener">arduino-psa-diag</a> (ECU_LIST.md). Valem para famílias de módulos PSA em geral;
+      o seu Cactus pode usar outro par ou outro protocolo (UDS ou KWP). Uma resposta negativa ou nenhuma resposta não significa defeito.</p>
+    <div class="row" id="mPresets">
+      <button class="sec" data-c="3E00">TesterPresent (3E 00)</button>
+      <button class="sec" data-c="22F190">VIN (22 F190)</button>
+      <button class="sec" data-c="22F194">Software (22 F194)</button>
+      <button class="sec" data-c="1A87">KWP ident. (1A 87)</button>
+      <button class="sec" data-c="1902FF">DTCs UDS (19 02 FF)</button>
+      <button class="sec" data-c="1001">Sessão padrão (10 01)</button>
+    </div>
+    <div class="row">
+      <select id="mHint" aria-label="Tipo de módulo (prioriza a tabela)">
+        <option value="">Módulo: automático</option>
+        <option value="airbag">Airbag</option>
+        <option value="abs">ABS / ESP</option>
+        <option value="cluster">Painel de instrumentos</option>
+      </select>
+      <button id="btnMDtc">Ler falhas do módulo</button>
+      <button id="btnMDtcAll" class="sec" title="Lê as falhas de ABS, airbag e painel (candidatos)">Ler ABS, airbag e painel</button>
+    </div>
+    <div id="mDtc"></div>
+    <pre id="mOut"></pre>
+  </section>
+
+  <section id="log" class="tab">
+    <div class="tools">
+      <label><input type="checkbox" id="logPoll"> Mostrar leituras ao vivo (automáticas)</label>
+      <label><input type="checkbox" id="logAuto" checked> Rolagem automática</label>
+      <button id="btnLogClear" class="sec">Limpar</button>
+      <button id="btnLogDl" class="sec">Baixar .txt</button>
+      <span id="logCount" class="mut"></span>
+    </div>
+    <div id="logBox"></div>
+  </section>
+
+  <section id="hist" class="tab">
+    <div class="row"><button id="btnHist" class="sec">Atualizar</button></div>
+    <h3>Conexões com a central</h3>
+    <p class="mut" style="margin:0 0 8px">Gravado em arquivo a cada conexão, desconexão e ação importante (apagar falhas, reset, diagnóstico), com data e hora. Arquivo: <span id="histFile" class="code"></span></p>
+    <div id="histConn"></div>
+    <h3>Versões</h3>
+    <pre id="histVer" style="max-height:420px;overflow:auto;white-space:pre-wrap"></pre>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = async (path, body) => {
+  const r = await fetch('/api/' + path, body ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : {});
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+};
+const showErr = m => { const e = $('#err'); e.textContent = m || ''; e.style.display = m ? 'block' : 'none'; };
+let connected = false;
+
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('act', x === b));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('act', t.id === b.dataset.t));
+});
+
+$('#btnConn').onclick = async () => {
+  $('#btnConn').disabled = true;
+  try {
+    if (connected) { await api('disconnect', {}); }
+    else { showErr(''); $('#btnConn').textContent = 'Conectando…'; await api('connect', {host:$('#host').value, port:$('#port').value}); }
+  } catch (e) { showErr(e.message); }
+  $('#btnConn').disabled = false;
+};
+
+const FEATURED = ['0C','0D','05'];
+function renderLive(values) {
+  if (!values.length) return;
+  const order = ['0C','0D','05','0F','04','11','47','0B','10','0E','06','07','14','15','52','2E','42','2F'];
+  values.sort((a,b) => order.indexOf(a.pid) - order.indexOf(b.pid));
+  $('#cards').innerHTML = values.map(v =>
+    `<div class="card ${FEATURED.includes(v.pid) ? 'big' : ''}"><div class="n">${v.name}</div>
+     <div class="v">${typeof v.value === 'number' ? (Number.isInteger(v.value) ? v.value : v.value.toFixed(1)) : v.value}<span class="u">${v.unit}</span></div></div>`).join('');
+}
+
+async function tick() {
+  try {
+    const s = await api('status');
+    connected = s.connected;
+    if (s.app_version) $('#ver').textContent = 'v' + s.app_version;
+    $('#dot').classList.toggle('on', connected);
+    $('#btnConn').textContent = connected ? 'Desconectar' : 'Conectar';
+    if (s.error && !connected) showErr(s.error);
+    if (connected) {
+      showErr('');
+      const l = await api('live');
+      renderLive(l.values);
+    }
+  } catch (e) {}
+  setTimeout(tick, 700);
+}
+tick();
+
+$('#btnDtc').onclick = async () => {
+  $('#dtcOut').textContent = 'Lendo…';
+  try {
+    const d = await api('dtcs');
+    let h = '';
+    const st = d.status;
+    if (st) {
+      h += `<div class="banner ${st.mil ? '' : 'ok'}">Luz de injeção (MIL): <b>${st.mil ? 'ACESA' : 'apagada'}</b> · ${st.dtc_count} código(s) confirmado(s)</div>`;
+    }
+    const table = (title, list) => `<h3>${title}</h3>` + (list.length
+      ? `<table>${list.map(c => `<tr><td class="code">${c.code}</td><td>${c.desc || '<span class="mut">sem descrição na tabela local</span>'}${pgHtml(c.peugeot)}</td></tr>`).join('')}</table>`
+      : '<p class="mut">Nenhum.</p>');
+    h += table('Confirmados', d.confirmed) + table('Pendentes', d.pending) + table('Permanentes', d.permanent);
+    if (st && st.monitors.length) {
+      h += '<h3>Monitores de prontidão (I/M)</h3><table>' + st.monitors.map(m =>
+        `<tr><td>${m.name}</td><td><span class="pill ${m.ready ? 'ok' : 'no'}">${m.ready ? 'Pronto' : 'Incompleto'}</span></td></tr>`).join('') + '</table>';
+    }
+    $('#dtcOut').innerHTML = h;
+  } catch (e) { $('#dtcOut').textContent = ''; showErr(e.message); }
+};
+
+$('#btnClear').onclick = async () => {
+  if (!confirm('Apagar os códigos de falha e dados de freeze frame da ECU?\n\nIsso também zera os monitores de prontidão. Anote os códigos antes.')) return;
+  try { await api('clear', {confirm:true}); $('#btnDtc').click(); } catch (e) { showErr(e.message); }
+};
+
+$('#btnInfo').onclick = async () => {
+  $('#infoOut').textContent = 'Lendo…';
+  try {
+    const i = await api('info');
+    $('#infoOut').innerHTML = `<table>
+      <tr><td>Adaptador</td><td>${i.version}</td></tr>
+      <tr><td>Protocolo</td><td>ELM nº ${i.protocol}</td></tr>
+      <tr><td>Tensão (adaptador)</td><td>${i.voltage}</td></tr>
+      <tr><td>VIN</td><td>${i.vin || '<span class="mut">não informado pela ECU</span>'}</td></tr>
+      <tr><td>PIDs suportados</td><td class="code">${i.supported.join(' ')}</td></tr></table>`;
+  } catch (e) { $('#infoOut').textContent = ''; showErr(e.message); }
+};
+
+// ---------- Tabela Peugeot ----------
+const famTxt = fs => fs.map(f => esc(f.title)).join(' · ');
+function pgHtml(list) {
+  if (!list || !list.length) return '';
+  return '<div class="mut" style="font-size:12.5px;margin-top:3px">Tabela Peugeot (EN): ' + list.map(v =>
+    `${esc(v.desc)} <span style="opacity:.75">[${famTxt(v.families)}]</span>`).join('<br>') + '</div>';
+}
+async function dtcSearch() {
+  const q = $('#dq').value.trim(); if (!q) return;
+  try {
+    const r = await api('dtc-search?q=' + encodeURIComponent(q));
+    $('#dqOut').innerHTML = r.total ? `<p class="mut">${r.total} resultado(s)${r.total > r.results.length ? ' — mostrando ' + r.results.length : ''}</p><table class="sm">${r.results.map(x =>
+      `<tr><td class="code">${esc(x.code)}</td><td>${esc(x.desc)}</td><td class="mut">${famTxt(x.families)}</td></tr>`).join('')}</table>` : '<p class="mut">Nada encontrado.</p>';
+  } catch (e) { showErr(e.message); }
+}
+$('#btnDq').onclick = dtcSearch;
+$('#dq').onkeydown = e => { if (e.key === 'Enter') dtcSearch(); };
+
+// ---------- Log ----------
+let logs = [], lastId = 0;
+const fmtT = t => { const d = new Date(t * 1000); return d.toTimeString().slice(0, 8) + '.' + String(d.getMilliseconds()).padStart(3, '0'); };
+const esc = x => x.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const lineHtml = e => {
+  const tag = e.kind === 'TX' ? '→ ' : e.kind === 'RX' ? '← ' : e.kind === 'ERR' ? '✖ ' : 'ℹ ';
+  const ms = e.ms != null ? `  (${e.ms} ms)` : '';
+  const src = e.src === 'poll' ? ' <span class="mut">[auto]</span>' : '';
+  return `<div class="l-${e.kind} ${e.src === 'poll' ? 'l-poll' : ''}">${fmtT(e.t)} ${tag}${esc(e.text)}${ms}${src}</div>`;
+};
+const visible = () => logs.filter(e => $('#logPoll').checked || e.src !== 'poll');
+function renderLog() {
+  const box = $('#logBox'), v = visible();
+  box.innerHTML = v.map(lineHtml).join('');
+  $('#logCount').textContent = `${v.length} de ${logs.length} linhas`;
+  if ($('#logAuto').checked) box.scrollTop = box.scrollHeight;
+}
+async function pollLog() {
+  try {
+    const r = await api('log?since=' + lastId);
+    if (r.entries.length) {
+      lastId = r.entries[r.entries.length - 1].id;
+      logs = logs.concat(r.entries).slice(-5000);
+      if ($('#log').classList.contains('act')) renderLog();
+    }
+  } catch (e) {}
+  setTimeout(pollLog, 800);
+}
+pollLog();
+$('#logPoll').onchange = renderLog;
+document.querySelector('nav button[data-t=log]').addEventListener('click', renderLog);
+$('#btnLogClear').onclick = async () => { await api('log/clear', {}); logs = []; renderLog(); };
+$('#btnLogDl').onclick = () => {
+  const txt = logs.map(e => `${fmtT(e.t)} ${e.kind.padEnd(4)} ${e.src === 'poll' ? '[auto] ' : ''}${e.text}${e.ms != null ? ' (' + e.ms + ' ms)' : ''}`).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt], {type: 'text/plain'}));
+  a.download = 'log_obd_' + new Date().toISOString().replace(/[:.]/g, '-') + '.txt';
+  a.click();
+};
+
+// ---------- Histórico: log de conexões e versões ----------
+async function loadHist() {
+  try {
+    const c = await api('connection-log');
+    $('#histFile').textContent = c.file;
+    $('#histConn').innerHTML = c.events.length ? tbl(['Data e hora', 'Evento', 'Detalhes'],
+      c.events.map(e => [esc(e.when), `<b>${esc(e.event)}</b>`, esc(e.details.join(' · '))])) : '<p class="mut">Nenhum evento registrado ainda.</p>';
+    const v = await api('changelog');
+    $('#histVer').textContent = v.changelog || 'CHANGELOG.md não encontrado.';
+  } catch (e) { showErr(e.message); }
+}
+$('#btnHist').onclick = loadHist;
+document.querySelector('nav button[data-t=hist]').addEventListener('click', loadHist);
+
+// ---------- Reset da ECU ----------
+$('#btnEcu').onclick = async () => {
+  if (!confirm('Enviar RESET para a central do motor (ID ' + $('#ecuId').value + ')?\n\nUse apenas com o motor desligado e a ignição ligada. A central pode reiniciar e a conexão cair por alguns segundos.')) return;
+  $('#ecuRes').innerHTML = '<span class="mut">Enviando…</span>';
+  try {
+    const r = await api('ecu-reset', {confirm: true, ecu_id: $('#ecuId').value, sub: $('#ecuSub').value});
+    $('#ecuRes').innerHTML = `<div class="banner ${r.ok ? 'ok' : ''}">${esc(r.detail)}<br><span class="code">Resposta: ${esc(r.raw || '(vazia)')}</span></div>`;
+  } catch (e) { $('#ecuRes').innerHTML = `<div class="banner">${esc(e.message)}</div>`; }
+};
+
+// ---------- Diagnóstico de capacidades ----------
+let scanResult = null;
+const hx = (v) => v == null ? '<span class="mut">—</span>' : esc(String(v));
+function tbl(head, rows) {
+  return `<table class="sm"><tr>${head.map(x => `<th>${x}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</table>`;
+}
+function renderScan(r) {
+  const a = r.adapter || {};
+  let h = `<p class="mut">Adaptador: ${esc(a.version || '')} · ${esc(a.protocol || '')} · ${esc(a.voltage || '')}<br>Centrais que responderam: <b>${(r.responding_ids || []).join(', ') || 'nenhuma'}</b></p>`;
+  (r.notes || []).forEach(n => h += `<div class="banner">${esc(n)}</div>`);
+  for (const e of r.ecus) {
+    const m1 = e.mode01 || {}, m6 = e.mode06 || {}, m9 = e.mode09 || {}, u = e.uds || {};
+    const nUds = Object.values(u.dids || {}).filter(d => d.status === 'ok').length;
+    h += `<details class="ecu" open><summary><b>Central ${e.resp_id}</b> (requisição ${e.req_id || '?'}) — ${(m1.supported || []).length} PIDs · ${Object.keys(m6.mids || {}).length} MIDs modo 06 · ${Object.keys(m9.items || {}).length} itens modo 09 · ${nUds} DIDs UDS lidos</summary>`;
+    if (e.note) h += `<p class="mut">${esc(e.note)}</p>`;
+    if (m1.values) h += `<details class="sec"><summary>Modo 01 — dados ao vivo (${(m1.supported || []).length})</summary>` +
+      tbl(['PID', 'Nome', 'Valor', 'Bruto'], Object.entries(m1.values).map(([k, v]) =>
+        [`<span class="code">${k}</span>`, v.name ? esc(v.name) : '<span class="mut">sem decodificador no app</span>', v.value != null ? esc(v.value + ' ' + (v.unit || '')) : '—', `<span class="code">${v.raw}</span>`])) + '</details>';
+    if (e.mode02) h += `<details class="sec"><summary>Modo 02 — freeze frame (${(e.mode02.supported || []).length} PIDs)</summary><p class="code">${(e.mode02.supported || []).join(' ') || 'não suportado'}</p></details>`;
+    if (e.dtc) h += `<details class="sec"><summary>Falhas (modos 03 / 07 / 0A)</summary>` + tbl(['Modo', 'Resultado'],
+      Object.entries(e.dtc).map(([k, v]) => [k, v === null ? '<span class="mut">sem resposta (não suportado)</span>' : (v.length ? v.map(c => `<span class="code">${c}</span>`).join(' ') : 'nenhuma')])) + '</details>';
+    if (m6.mids) h += `<details class="sec"><summary>Modo 06 — resultados de testes (${Object.keys(m6.mids).length} MIDs)</summary>` +
+      (Object.keys(m6.mids).length ? tbl(['MID', 'TID', 'UASID', 'Valor', 'Mín', 'Máx'], Object.entries(m6.mids).flatMap(([mid, d]) =>
+        d.tests.length ? d.tests.map(t => [mid, t.tid, t.uasid, t.value, t.min, t.max]) : [[mid, '<span class="mut">bruto: ' + d.raw + '</span>', '', '', '', '']])) : '<p class="mut">não suportado</p>') + '</details>';
+    if (m9.items) h += `<details class="sec"><summary>Modo 09 — identificação</summary>` +
+      (Object.keys(m9.items).length ? tbl(['PID', 'Item', 'Conteúdo'], Object.entries(m9.items).map(([k, v]) => [k, esc(v.name), esc(v.text || '') + ` <span class="code mut">${v.raw}</span>`])) : '<p class="mut">não suportado</p>') + '</details>';
+    if (u.dids) h += `<details class="sec"><summary>UDS — identificação estendida (3E: ${esc(u.tester_present || '?')})</summary>` +
+      tbl(['DID', 'Descrição', 'Resultado'], Object.entries(u.dids).map(([k, v]) =>
+        [`<span class="code">${k}</span>`, esc(v.label), v.status === 'ok' ? `<span class="ok">${esc(v.text || '')}</span> <span class="code mut">${v.hex}</span>` : (v.nrc ? `<span class="mut">recusado 0x${v.nrc} — ${esc(v.desc)}</span>` : `<span class="mut">${esc(v.status)}</span>`)])) +
+      `<p class="mut">Leitura de DTC UDS (0x19): ${esc(JSON.stringify(u.read_dtc_19))}</p></details>`;
+    h += '</details>';
+  }
+  $('#scanOut').innerHTML = h;
+}
+$('#btnScan').onclick = async () => {
+  try { await api('scan/start', {}); } catch (e) { showErr(e.message); return; }
+  showErr(''); $('#scanOut').innerHTML = ''; $('#btnScan').disabled = true; $('#btnScanDl').disabled = true;
+  $('#scanBar').style.display = 'block';
+  const TOTAL = 16;
+  const poll = async () => {
+    try {
+      const s = await api('scan/status');
+      $('#scanStep').textContent = s.step + ' …';
+      $('#scanBar i').style.width = Math.min(98, Math.round(s.done / TOTAL * 100)) + '%';
+      if (s.running) { setTimeout(poll, 700); return; }
+      $('#scanBar i').style.width = '100%';
+      $('#btnScan').disabled = false;
+      if (s.error) { showErr(s.error); $('#scanStep').textContent = ''; return; }
+      scanResult = await api('scan/result');
+      $('#scanStep').textContent = 'Concluído.';
+      $('#btnScanDl').disabled = false;
+      renderScan(scanResult);
+    } catch (e) { showErr(e.message); $('#btnScan').disabled = false; }
+  };
+  poll();
+};
+$('#btnScanDl').onclick = () => {
+  if (!scanResult) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(scanResult, null, 2)], {type: 'application/json'}));
+  a.download = 'diagnostico_capacidades_' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+  a.click();
+};
+
+// ---------- Módulos (avançado, somente leitura) ----------
+const CANDIDATES = [
+  ['Motor (injeção, família INJ)', '6A8', '688'], ['Motor (OBD padrão)', '7E0', '7E8'],
+  ['BSI (central de carroceria)', '752', '652'], ['ABS / ESP', '6AD', '68D', 'abs'],
+  ['Airbag', '744', '644', 'airbag'], ['Painel de instrumentos', '75F', '65F', 'cluster'],
+  ['Câmbio automático (BOITEVIT)', '6A9', '689'], ['Direção elétrica (EPS)', '6B5', '695'],
+  ['Central multimídia/telemática', '764', '664'],
+];
+CANDIDATES.forEach(([n, q, r], i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${n} — ${q} → ${r}`; $('#mPick').appendChild(o); });
+$('#mPick').onchange = () => { const c = CANDIDATES[$('#mPick').value]; if (c) { $('#mReq').value = c[1]; $('#mResp').value = c[2]; $('#mHint').value = c[3] || ''; } };
+async function modSend(cmd) {
+  const body = {req_id: $('#mReq').value, resp_id: $('#mResp').value, cmd};
+  const out = $('#mOut'); out.textContent += `> [${body.req_id.toUpperCase()}→${(body.resp_id || '—').toUpperCase()}] ${cmd}\n`;
+  try {
+    const r = await api('uds', body);
+    if (!r.responses.length) out.textContent += '  (sem resposta do módulo)\n';
+    r.responses.forEach(x => {
+      out.textContent += `  ${x.id} ${x.kind}: ${x.hex}` + (x.kind === 'negativa' ? `  → 0x${x.nrc} ${x.desc}` : '') +
+        (x.ascii ? `  "${x.ascii}"` : '') + (x.complete === false ? '  (incompleta)' : '') + '\n';
+    });
+  } catch (e) { out.textContent += `  ! ${e.message}\n`; }
+  out.scrollTop = 1e9;
+}
+$('#btnMod').onclick = () => { const c = $('#mCmd').value.trim(); if (c) modSend(c); };
+$('#mCmd').onkeydown = e => { if (e.key === 'Enter') $('#btnMod').click(); };
+$('#btnProbe').onclick = async () => { for (const c of ['3E00', '22F190', '1A87']) await modSend(c); };
+$('#btnProbeAll').onclick = async () => {
+  if (!confirm('Sondar ' + CANDIDATES.length + ' módulos candidatos?\n\nPara cada um o app envia apenas 3 consultas de leitura (3E00, 22F190, 1A87). Nada é escrito, resetado ou apagado. Faça com o carro parado.')) return;
+  const out = $('#mOut'); out.textContent += '=== Sondagem dos candidatos ===\n';
+  for (const [n, q, r] of CANDIDATES) {
+    out.textContent += `\n# ${n}\n`; $('#mReq').value = q; $('#mResp').value = r;
+    for (const c of ['3E00', '22F190', '1A87']) await modSend(c);
+  }
+  out.textContent += '\n=== Fim da sondagem ===\n'; out.scrollTop = 1e9;
+};
+document.querySelectorAll('#mPresets button').forEach(b => b.onclick = () => { $('#mCmd').value = b.dataset.c; modSend(b.dataset.c); });
+
+// ---- falhas de módulos (UDS 19 02 / KWP 17) com a tabela Peugeot ----
+function renderModDtc(r, title) {
+  let h = `<div class="box"><h3>${esc(title || 'Módulo')} <span class="mut" style="font-size:13px;font-weight:400">${r.req_id} → ${r.resp_id}</span></h3>`;
+  h += `<div class="banner" style="background:#f5a52422;border-color:var(--warn)">${esc(r.note)}</div>`;
+  h += `<p class="mut" style="margin:6px 0">Tentativas: ` + r.attempts.map(a => `<span class="code">${a.cmd}</span> ${esc(a.result)}`).join(' · ') + '</p>';
+  if (r.format) {
+    h += `<p class="mut" style="margin:6px 0">Formato lido: <b>${r.format === 'uds' ? 'UDS (19 02)' : 'KWP'}</b> via <span class="code">${r.command}</span> · ${r.records.length} falha(s)</p>`;
+    if (!r.records.length) h += '<p class="ok">O módulo respondeu e não informou falhas.</p>';
+    else h += `<table class="sm"><tr><th>Bruto</th><th>Código</th><th>Status</th><th>Descrição (tabela Peugeot, EN)</th></tr>` + r.records.map(x => {
+      const st = x.status_text ? esc(x.status_text.join(', ') || '—') + ` <span class="mut code">${x.status}</span>` : `<span class="code">${x.status}</span> <span class="mut">(significado depende do módulo)</span>`;
+      const ms = x.matches.length ? x.matches.map(m => `${m.hinted ? '★ ' : ''}${esc(m.desc)} <span class="mut" style="font-size:12px">[${esc(m.families.map(f => f.title).join(' · '))}; ${esc(m.how)} ${esc(m.key)}]</span>`).join('<br>')
+        : '<span class="mut">sem correspondência na tabela</span>';
+      return `<tr><td class="code">${x.raw}</td><td class="code">${x.code_raw}<br><span class="mut">${x.code_sae}</span></td><td>${st}</td><td>${ms}</td></tr>`;
+    }).join('') + '</table><p class="mut" style="margin:6px 0 0">★ = família do tipo de módulo escolhido.</p>';
+  }
+  return h + '</div>';
+}
+async function modDtc(req, resp, hint, title) {
+  const out = $('#mOut'); out.textContent += `> falhas do módulo [${req.toUpperCase()}→${(resp || '').toUpperCase()}]\n`;
+  try {
+    const r = await api('module-dtcs', {req_id: req, resp_id: resp, hint});
+    $('#mDtc').insertAdjacentHTML('beforeend', renderModDtc(r, title));
+    out.textContent += `  ${r.format ? r.records.length + ' falha(s) via ' + r.command : 'sem leitura de falhas'}\n`;
+  } catch (e) { out.textContent += `  ! ${e.message}\n`; showErr(e.message); }
+  out.scrollTop = 1e9;
+}
+$('#btnMDtc').onclick = () => { $('#mDtc').innerHTML = ''; modDtc($('#mReq').value, $('#mResp').value, $('#mHint').value, 'Módulo'); };
+$('#btnMDtcAll').onclick = async () => {
+  $('#mDtc').innerHTML = '';
+  for (const [n, q, r, hint] of CANDIDATES.filter(c => c[3])) await modDtc(q, r, hint, n);
+};
+
+const send = async () => {
+  const c = $('#cmd').value.trim(); if (!c) return;
+  $('#termOut').textContent += '> ' + c + '\n';
+  try { const r = await api('raw', {cmd:c}); $('#termOut').textContent += r.response + '\n'; }
+  catch (e) { $('#termOut').textContent += '! ' + e.message + '\n'; }
+  $('#cmd').value = ''; $('#termOut').scrollTop = 1e9;
+};
+$('#btnSend').onclick = send;
+$('#cmd').onkeydown = e => { if (e.key === 'Enter') send(); };
+</script>
+</body>
+</html>
