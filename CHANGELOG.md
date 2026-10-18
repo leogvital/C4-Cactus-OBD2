@@ -2,6 +2,9 @@
 
 Formato [SemVer](https://semver.org/lang/pt-BR/): `MAIOR.MENOR.CORREÇÃO`. Cada publicação recebe uma versão aqui, uma etiqueta `vX.Y.Z` no git e o número é exibido no painel. Para publicar: `python tools/release.py <patch|minor|major> "resumo"`.
 
+## [1.2.1] - 2026-10-18
+- Renomeia o botão 'Teste dos instrumentos' para 'Animação de teste' e deixa claro que é só visual e não testa o painel do carro
+
 ## [1.2.0] - 2026-10-18
 ### Novo
 - **Aba Painel**: instrumentos animados (conta-giros, velocímetro, temperatura da água, combustível), luzes de aviso (injeção, falhas, carga, água, combustível), cartões de tensão/carga/borboleta/pedal/etc., modo demonstração e teste dos instrumentos. A aba abre por padrão.

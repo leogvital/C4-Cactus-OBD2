@@ -147,7 +147,7 @@ Abaixo dos mostradores há cartões com tensão, carga, borboleta, pedal, ar de 
 
 - **O Cactus não informa o nível de combustível pela porta OBD**, então o mostrador de combustível fica em `N/D` neste carro (aparece normalmente em carros que informam o PID 2F).
 - **Modo demonstração:** simula valores para ver o painel funcionando sem o carro (aparece a etiqueta DEMONSTRAÇÃO). Também abre direto em http://localhost:8080/#demo.
-- **Teste dos instrumentos:** ponteiros vão ao fim da escala e voltam e as luzes acendem, como ao ligar um carro. Roda sozinho ao abrir a página.
+- **Animação de teste:** ponteiros vão ao fim da escala e voltam e as luzes acendem, como ao ligar um carro. É **só uma animação na tela**: não envia nenhum comando ao carro e não testa o painel de instrumentos do veículo. Roda sozinha ao abrir a página.
 - Valores com mais de 30 s sem atualização somem (`--`). Os ponteiros usam animação CSS e respeitam a opção "reduzir movimento" do sistema.
 
 ### Ao vivo
